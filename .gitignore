@@ -5,6 +5,6 @@ node_modules
 .vercel
 .supabase
 supabase/.temp
-Layout
-design_handoff_coop_news
+/Layout/
+/design_handoff_coop_news/
 *.log
