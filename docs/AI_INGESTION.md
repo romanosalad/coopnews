@@ -44,15 +44,15 @@ npx supabase@latest functions deploy ingest-news --project-ref YOUR_PROJECT_REF
 
 ```bash
 npx supabase@latest secrets set \
-  SUPABASE_URL="https://YOUR_PROJECT_REF.supabase.co" \
-  SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY" \
+  PROJECT_URL="https://YOUR_PROJECT_REF.supabase.co" \
+  SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY" \
   OPENAI_API_KEY="YOUR_OPENAI_API_KEY" \
   OPENAI_MODEL="gpt-4o-mini" \
   SERPER_API_KEY="YOUR_SERPER_API_KEY" \
   --project-ref YOUR_PROJECT_REF
 ```
 
-Do not place `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, or `SERPER_API_KEY` in Vercel public env vars.
+Do not place `SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, or `SERPER_API_KEY` in Vercel public env vars.
 
 ## Vercel env vars
 

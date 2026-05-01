@@ -51,14 +51,20 @@ Deno.serve(async (request) => {
     return json({ error: "Use POST" }, 405);
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseUrl = Deno.env.get("PROJECT_URL") ?? Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const serperKey = Deno.env.get("SERPER_API_KEY");
   const openaiKey = Deno.env.get("OPENAI_API_KEY");
   const model = Deno.env.get("OPENAI_MODEL") ?? DEFAULT_MODEL;
 
-  if (!supabaseUrl || !serviceKey || !openaiKey) {
-    return json({ error: "Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY or OPENAI_API_KEY" }, 500);
+  const missingSecrets = [
+    !supabaseUrl ? "PROJECT_URL" : null,
+    !serviceKey ? "SERVICE_ROLE_KEY" : null,
+    !openaiKey ? "OPENAI_API_KEY" : null
+  ].filter(Boolean);
+
+  if (missingSecrets.length > 0) {
+    return json({ error: `Missing ${missingSecrets.join(", ")}` }, 500);
   }
 
   const body = await request.json().catch(() => ({}));
