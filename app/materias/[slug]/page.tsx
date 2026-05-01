@@ -12,6 +12,8 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+export const revalidate = 300;
+
 export function generateStaticParams() {
   return coopArticles.map((article) => ({ slug: article.slug }));
 }

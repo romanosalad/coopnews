@@ -10,6 +10,8 @@ import { Footer } from "@/components/layout/Footer";
 import { TopBar } from "@/components/layout/TopBar";
 import { getPortalHomeArticles } from "@/lib/portal-articles";
 
+export const revalidate = 300;
+
 export default async function HomePage() {
   const articles = await getPortalHomeArticles();
 
