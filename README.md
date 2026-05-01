@@ -9,6 +9,7 @@ Phase 1 scaffold for a cooperative marketing feed with AI ingestion, TabNews-sty
 - `app/page.tsx` renders the ranked community feed.
 - `app/contents/[slug]/page.tsx` renders the full markdown article.
 - `app/stories/[slug]/page.tsx` renders the 5-slide story experience with NewsArticle metadata.
+- `docs/AI_INGESTION.md` explains how to connect the Supabase `CoopNews` project and activate AI ingestion.
 
 ## Local setup
 
