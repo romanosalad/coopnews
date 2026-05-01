@@ -7,6 +7,12 @@ export type CoopArticle = {
   author: string;
   readTime: string;
   placeholder: number;
+  imageUrl?: string | null;
+  sourceUrl?: string | null;
+  bodyMarkdown?: string | null;
+  relevanceScore?: number | null;
+  decisionLog?: Record<string, unknown> | null;
+  isAiGenerated?: boolean;
   section: "hero" | "agora" | "popular" | "editorias" | "lafora";
   body: string[];
 };

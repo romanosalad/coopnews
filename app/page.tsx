@@ -8,8 +8,11 @@ import { LaForaSection } from "@/components/home/LaForaSection";
 import { PopularSection } from "@/components/home/PopularSection";
 import { Footer } from "@/components/layout/Footer";
 import { TopBar } from "@/components/layout/TopBar";
+import { getPortalHomeArticles } from "@/lib/portal-articles";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const articles = await getPortalHomeArticles();
+
   return (
     <main data-screen-label="01 Home Coop News">
       <BrandCornerMotif />
@@ -17,10 +20,10 @@ export default function HomePage() {
         <CoopWordmark height={26} dark />
       </div>
       <TopBar />
-      <Hero />
+      <Hero feature={articles.heroFeature} leftArticles={articles.heroLeft} rightArticles={articles.heroRight} />
       <ColunistasSection />
       <PopularSection />
-      <EditoriasSection />
+      <EditoriasSection articles={articles.editorias} />
       <LaForaSection />
       <CtaBand />
       <Footer />

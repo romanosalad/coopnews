@@ -39,6 +39,19 @@ export async function getRankedContents(): Promise<Content[]> {
   return data as Content[];
 }
 
+export async function getPublishedContentsFromSupabase(): Promise<Content[]> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.rpc("ranked_contents");
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data as Content[];
+}
+
 export async function getContentBySlug(slug: string): Promise<Content | null> {
   const supabase = getSupabaseServerClient();
   if (!supabase) return demoContents.find((content) => content.slug === slug) ?? null;

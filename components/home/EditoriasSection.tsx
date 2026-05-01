@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { getArticlesBySection } from "@/lib/coop-news-data";
-import { Placeholder } from "@/components/ui/Placeholder";
+import type { CoopArticle } from "@/lib/coop-news-data";
+import { ArticleVisual } from "@/components/ui/ArticleVisual";
 
-export function EditoriasSection() {
-  const cards = getArticlesBySection("editorias");
+type EditoriasSectionProps = {
+  articles: CoopArticle[];
+};
 
+export function EditoriasSection({ articles }: EditoriasSectionProps) {
   return (
     <section className="editorias">
       <div className="shell">
@@ -18,10 +20,10 @@ export function EditoriasSection() {
           <a href="#" className="link-arrow">VER TUDO →</a>
         </div>
         <div className="editorias-grid">
-          {cards.map((card) => (
+          {articles.map((card) => (
             <article className="ed-card" key={card.slug}>
-              <Link href={`/materias/${card.slug}`} className="story-image" aria-label={`Abrir matéria: ${stripHtml(card.titleHtml)}`}>
-                <Placeholder idx={card.placeholder} />
+              <Link href={`/materias/${card.slug}`} className="story-image" aria-label={`Abrir materia: ${stripHtml(card.titleHtml)}`}>
+                <ArticleVisual alt="" imageUrl={card.imageUrl} placeholder={card.placeholder} />
               </Link>
               <span className={`eyebrow ${card.eyebrowClass}`}>{card.eyebrow}</span>
               <h3>

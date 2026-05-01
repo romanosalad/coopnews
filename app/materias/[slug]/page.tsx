@@ -4,8 +4,9 @@ import { BrandCornerMotif } from "@/components/brand/BrandCornerMotif";
 import { CoopWordmark } from "@/components/brand/Wordmark";
 import { Footer } from "@/components/layout/Footer";
 import { TopBar } from "@/components/layout/TopBar";
-import { Placeholder } from "@/components/ui/Placeholder";
-import { coopArticles, getArticleBySlug } from "@/lib/coop-news-data";
+import { ArticleVisual } from "@/components/ui/ArticleVisual";
+import { coopArticles } from "@/lib/coop-news-data";
+import { getPortalArticleBySlug } from "@/lib/portal-articles";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -17,7 +18,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getPortalArticleBySlug(slug);
   if (!article) return {};
 
   return {
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function MateriaPage({ params }: Props) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getPortalArticleBySlug(slug);
   if (!article) notFound();
 
   const related = coopArticles.filter((item) => item.slug !== article.slug && item.section === article.section).slice(0, 3);
@@ -52,10 +53,11 @@ export default async function MateriaPage({ params }: Props) {
               <span>POR {article.author.toUpperCase()}</span>
               <span>· {article.readTime.toUpperCase()}</span>
               <span>· COOP NEWS</span>
+              {typeof article.relevanceScore === "number" ? <span>· IA {Math.round(article.relevanceScore * 100)}%</span> : null}
             </div>
           </div>
           <div className="article-cover">
-            <Placeholder idx={article.placeholder} />
+            <ArticleVisual alt="" imageUrl={article.imageUrl} placeholder={article.placeholder} />
           </div>
         </header>
 
@@ -69,24 +71,49 @@ export default async function MateriaPage({ params }: Props) {
                 O que importa para o Coop News é separar campanha bonita de comunicação que muda comportamento, relação e valor percebido.
               </p>
             </blockquote>
-            <p>
-              Esta visualização ainda usa conteúdo estático de demonstração. Quando a ingestão entrar, este mesmo desenho receberá matérias reais,
-              aprovadas pela curadoria antes de aparecerem no portal.
-            </p>
+            {article.isAiGenerated ? (
+              <p>
+                Esta matéria foi refinada por IA a partir de uma fonte externa e preserva a imagem original capturada do artigo quando disponível.
+                {article.sourceUrl ? (
+                  <>
+                    {" "}
+                    <a href={article.sourceUrl} target="_blank" rel="noreferrer">Ver fonte original.</a>
+                  </>
+                ) : null}
+              </p>
+            ) : (
+              <p>
+                Esta visualização ainda usa conteúdo estático de demonstração. Quando a ingestão entrar, este mesmo desenho receberá matérias reais,
+                aprovadas pela curadoria antes de aparecerem no portal.
+              </p>
+            )}
           </div>
 
           <aside className="article-sidebar">
             <div className="article-sidebar-card">
-              <span className="section-sub">PRÓXIMA LEITURA</span>
-              <h2>Também nesta editoria</h2>
-              <div className="article-related-list">
-                {related.map((item) => (
-                  <Link href={`/materias/${item.slug}`} key={item.slug} className="article-related">
-                    <span className={`eyebrow ${item.eyebrowClass}`}>{item.eyebrow}</span>
-                    <strong dangerouslySetInnerHTML={{ __html: item.titleHtml }} />
-                  </Link>
-                ))}
-              </div>
+              <span className="section-sub">{article.isAiGenerated ? "CURADORIA IA" : "PRÓXIMA LEITURA"}</span>
+              <h2>{article.isAiGenerated ? "Decisão editorial" : "Também nesta editoria"}</h2>
+              {article.isAiGenerated ? (
+                <div className="article-related-list">
+                  <div className="article-related">
+                    <span className={`eyebrow ${article.eyebrowClass}`}>SCORE</span>
+                    <strong>{typeof article.relevanceScore === "number" ? `${Math.round(article.relevanceScore * 100)}% de relevância` : "Aguardando score"}</strong>
+                  </div>
+                  <div className="article-related">
+                    <span className={`eyebrow ${article.eyebrowClass}`}>IMAGEM</span>
+                    <strong>{article.imageUrl ? "Imagem original do artigo" : "Placeholder editorial"}</strong>
+                  </div>
+                </div>
+              ) : (
+                <div className="article-related-list">
+                  {related.map((item) => (
+                    <Link href={`/materias/${item.slug}`} key={item.slug} className="article-related">
+                      <span className={`eyebrow ${item.eyebrowClass}`}>{item.eyebrow}</span>
+                      <strong dangerouslySetInnerHTML={{ __html: item.titleHtml }} />
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </aside>
         </div>
