@@ -1,4 +1,4 @@
-project_id = "newscoop-creative-engine"
+project_id = "newscoop"
 
 [api]
 enabled = true

@@ -4,6 +4,7 @@ node_modules
 .env*.local
 .vercel
 .supabase
+supabase/.temp
 Layout
 design_handoff_coop_news
 *.log

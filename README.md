@@ -1,4 +1,4 @@
-# NewsCoop Creative Engine
+# newscoop
 
 Phase 1 scaffold for a cooperative marketing feed with AI ingestion, TabNews-style voting, and Web Story rendering.
 
