@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="980" viewBox="0 0 1400 980" role="img" aria-label="Educacao financeira em comunidade">
+  <rect width="1400" height="980" fill="#eef0e8"/>
+  <rect x="120" y="120" width="1160" height="740" rx="30" fill="#ffffff"/>
+  <rect x="190" y="190" width="360" height="590" rx="22" fill="#1f7a5c"/>
+  <rect x="610" y="190" width="600" height="160" rx="22" fill="#111316"/>
+  <rect x="610" y="405" width="260" height="375" rx="22" fill="#e85d2a"/>
+  <rect x="920" y="405" width="290" height="375" rx="22" fill="#dfe7f1"/>
+  <path d="M250 300h230M250 370h160M670 265h390M670 520h130M670 590h150M980 520h145M980 590h110" stroke="#f7f5ef" stroke-width="30" stroke-linecap="round"/>
+  <path d="M980 520h145M980 590h110" stroke="#111316" stroke-opacity=".2" stroke-width="30" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="980" viewBox="0 0 1400 980" role="img" aria-label="Campanha de safra com dados">
+  <rect width="1400" height="980" fill="#e8efe4"/>
+  <path d="M0 720c220-120 420-120 620 0s390 120 780 0v260H0z" fill="#1f7a5c"/>
+  <path d="M0 780c260-95 500-95 720 0s410 95 680 0v200H0z" fill="#111316" opacity=".9"/>
+  <rect x="130" y="120" width="520" height="420" rx="28" fill="#ffffff"/>
+  <rect x="730" y="120" width="540" height="420" rx="28" fill="#f7f5ef"/>
+  <path d="M200 230h300M200 300h230M200 370h330" stroke="#111316" stroke-opacity=".22" stroke-width="28" stroke-linecap="round"/>
+  <path d="M805 440 910 330l95 65 155-180" fill="none" stroke="#e85d2a" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="910" cy="330" r="28" fill="#1f7a5c"/>
+  <circle cx="1160" cy="215" r="28" fill="#1f7a5c"/>
+</svg>
