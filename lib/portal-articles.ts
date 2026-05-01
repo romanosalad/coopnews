@@ -23,7 +23,7 @@ const fallbackHeroRight = [
 ].map((slug) => getArticleBySlug(slug)).filter(Boolean) as CoopArticle[];
 
 export async function getPortalHomeArticles(): Promise<PortalHomeArticles> {
-  const live = (await getPublishedContentsFromSupabase()).map(contentToArticle);
+  const live = prioritizeArticlesWithImages((await getPublishedContentsFromSupabase()).map(contentToArticle));
 
   if (live.length === 0) {
     return {
@@ -58,6 +58,14 @@ function fillArticles(primary: CoopArticle[], fallback: CoopArticle[], limit: nu
     return true;
   });
   return merged.slice(0, limit);
+}
+
+function prioritizeArticlesWithImages(articles: CoopArticle[]) {
+  return [...articles].sort((left, right) => {
+    if (left.imageUrl && !right.imageUrl) return -1;
+    if (!left.imageUrl && right.imageUrl) return 1;
+    return 0;
+  });
 }
 
 function contentToArticle(content: Content): CoopArticle {
