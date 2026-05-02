@@ -1,4 +1,4 @@
-import { coopArticles, getArticleBySlug, getArticlesBySection, type CoopArticle } from "@/lib/coop-news-data";
+import { coopArticles, getArticleBySlug, getArticlesBySection, type ArticleBodyBlock, type CoopArticle } from "@/lib/coop-news-data";
 import { getPopularContentsFromSupabase, getPublishedContentsFromSupabase } from "@/lib/supabase";
 import type { Content } from "@/lib/types";
 
@@ -34,8 +34,6 @@ export async function getPortalHomeArticles(): Promise<PortalHomeArticles> {
   const popularLive = dedupeContentsBySource(await getPopularContentsFromSupabase())
     .map(contentToArticle)
     .filter((article) => !isWeakRoundupArticle(article));
-  const coopTech = filterByDesk(live, ["CoopTech", "Martech", "IA", "Automacao", "Tech"]);
-  const laFora = filterByLaFora(live);
 
   if (live.length === 0) {
     return {
@@ -49,15 +47,53 @@ export async function getPortalHomeArticles(): Promise<PortalHomeArticles> {
     };
   }
 
-  return {
-    heroFeature: live[0] ?? fallbackHero,
-    heroLeft: fillArticles(live.slice(1, 4), fallbackHeroLeft, 3),
-    heroRight: fillArticles(live.slice(4, 8), fallbackHeroRight, 4),
-    editorias: fillArticles(live.slice(0, 6), getArticlesBySection("editorias"), 6),
-    coopTech: fillFromLive(coopTech, live, 6),
-    popular: fillArticles(popularLive.length > 0 ? popularLive : live, getArticlesBySection("popular"), 7),
-    laFora: fillArticles(laFora, getArticlesBySection("lafora"), 3)
+  // Cross-section dedupe: hero claims first, then CoopTech / Popular / LaFora
+  // pick from what is left so each desk shows distinct stories instead of
+  // recycling the same article across the entire homepage.
+  const claimed = new Set<string>();
+  const claim = (article: CoopArticle | undefined) => {
+    if (!article) return undefined;
+    claimed.add(article.slug);
+    return article;
   };
+  const remaining = () => live.filter((article) => !claimed.has(article.slug));
+
+  const heroFeature = claim(live[0]) ?? fallbackHero;
+  const heroLeftLive = takeAndClaim(remaining(), 3, claimed);
+  const heroRightLive = takeAndClaim(remaining(), 4, claimed);
+  const heroLeft = fillArticles(heroLeftLive, fallbackHeroLeft, 3, claimed);
+  const heroRight = fillArticles(heroRightLive, fallbackHeroRight, 4, claimed);
+
+  const coopTechPool = filterByCoopTech(remaining());
+  const coopTech = takeAndClaim(coopTechPool, 6, claimed);
+
+  const popularPool = popularLive.filter((article) => !claimed.has(article.slug));
+  const popularFiltered = popularPool.length > 0 ? popularPool : remaining();
+  const popular = fillArticles(takeAndClaim(popularFiltered, 7, claimed), getArticlesBySection("popular"), 7, claimed);
+
+  const laForaPool = filterByLaFora(remaining());
+  const laFora = fillArticles(takeAndClaim(laForaPool, 3, claimed), getArticlesBySection("lafora"), 3, claimed);
+
+  return {
+    heroFeature,
+    heroLeft,
+    heroRight,
+    editorias: takeAndClaim(remaining(), 6, claimed),
+    coopTech,
+    popular,
+    laFora
+  };
+}
+
+function takeAndClaim(pool: CoopArticle[], limit: number, claimed: Set<string>) {
+  const picked: CoopArticle[] = [];
+  for (const article of pool) {
+    if (picked.length >= limit) break;
+    if (claimed.has(article.slug)) continue;
+    claimed.add(article.slug);
+    picked.push(article);
+  }
+  return picked;
 }
 
 function dedupeContentsBySource(contents: Content[]) {
@@ -88,39 +124,58 @@ export async function getPortalArticleBySlug(slug: string) {
   return getArticleBySlug(slug);
 }
 
-function fillArticles(primary: CoopArticle[], fallback: CoopArticle[], limit: number) {
-  const seen = new Set<string>();
-  const merged = [...primary, ...fallback].filter((article) => {
-    if (seen.has(article.slug)) return false;
+function fillArticles(primary: CoopArticle[], fallback: CoopArticle[], limit: number, claimed?: Set<string>) {
+  const seen = new Set<string>(claimed ?? []);
+  primary.forEach((article) => seen.add(article.slug));
+  const filler = fallback.filter((article) => !seen.has(article.slug));
+  filler.forEach((article) => {
+    if (claimed) claimed.add(article.slug);
     seen.add(article.slug);
-    return true;
   });
-  return merged.slice(0, limit);
+  return [...primary, ...filler].slice(0, limit);
 }
 
-function fillFromLive(primary: CoopArticle[], live: CoopArticle[], limit: number) {
-  const seen = new Set<string>();
-  return [...primary, ...live].filter((article) => {
-    if (seen.has(article.slug)) return false;
-    seen.add(article.slug);
-    return true;
-  }).slice(0, limit);
-}
-
-function filterByDesk(articles: CoopArticle[], names: string[]) {
-  const normalizedNames = names.map(normalizeText);
+// Strict CoopTech: requires desk === CoopTech OR category clearly mapping to
+// IA / automacao / martech / tech. Source URL fallback catches obvious tech
+// publications when the AI mis-tagged the desk.
+function filterByCoopTech(articles: CoopArticle[]) {
   return articles.filter((article) => {
     const desk = normalizeText(String(article.decisionLog?.desk ?? ""));
     const category = normalizeText(article.eyebrow);
-    return normalizedNames.some((name) => desk.includes(name) || category.includes(name));
+    const sourceText = normalizeText(`${article.sourceUrl ?? ""} ${stripHtml(article.titleHtml)}`);
+
+    if (desk === "cooptech" || category.includes("cooptech") || category.includes("martech")) {
+      return true;
+    }
+    if (category.includes("ia") || category.includes("automacao") || category.includes("tech")) {
+      return true;
+    }
+    return [
+      "techcrunch",
+      "the verge",
+      "wired",
+      "venturebeat",
+      "ai for",
+      "machine learning",
+      "automation",
+      "martech",
+      "openai",
+      "anthropic"
+    ].some((keyword) => sourceText.includes(keyword));
   });
 }
 
+// Strict La Fora: only B Corp / ESG / Purpose-driven brands or non-coop case
+// studies the editorial line uses for inspiration. Falls back to nothing
+// rather than spilling unrelated coop articles into the section.
 function filterByLaFora(articles: CoopArticle[]) {
-  const deskMatch = filterByDesk(articles, ["La Fora", "Lá Fora", "Comunicacao do Bem", "Comunicação do Bem", "B Corp", "ESG"]);
-  if (deskMatch.length > 0) return deskMatch;
-
   return articles.filter((article) => {
+    const desk = normalizeText(String(article.decisionLog?.desk ?? ""));
+    const category = normalizeText(article.eyebrow);
+    if (desk.includes("la fora") || desk.includes("lafora") || category.includes("fora") || category.includes("bem")) {
+      return true;
+    }
+
     const text = normalizeText(`${stripHtml(article.titleHtml)} ${article.sourceUrl ?? ""} ${article.eyebrow}`);
     return [
       "b corp",
@@ -136,7 +191,10 @@ function filterByLaFora(articles: CoopArticle[]) {
       "rabobank",
       "desjardins",
       "nationwide",
-      "rei co-op"
+      "rei co-op",
+      "duolingo",
+      "airbnb",
+      "starbucks"
     ].some((keyword) => text.includes(keyword));
   });
 }
@@ -191,7 +249,8 @@ function isWeakRoundupArticle(article: CoopArticle) {
 
 function contentToArticle(content: Content): CoopArticle {
   const category = content.category || "Marketing Cooperativista";
-  const body = markdownToParagraphs(content.body_markdown);
+  const bodyBlocks = parseBodyBlocks(content.body_markdown);
+  const body = bodyBlocks.filter((block) => block.type === "paragraph").map((block) => block.text);
   const summary = getDecisionLogString(content.decision_log, "summary");
   const avgScrollDepth = content.view_count ? Math.round((content.total_scroll_depth ?? 0) / content.view_count) : 0;
   const dek = buildDek({ summary, body, title: content.title });
@@ -230,7 +289,8 @@ function contentToArticle(content: Content): CoopArticle {
         }))
       : [],
     section: "editorias",
-    body: body.length > 0 ? body : ["Matéria reescrita pela redação do CoopNews."]
+    body: body.length > 0 ? body : ["Matéria reescrita pela redação do CoopNews."],
+    bodyBlocks: bodyBlocks.length > 0 ? injectVisualRhythm(bodyBlocks) : [{ type: "paragraph", text: "Matéria reescrita pela redação do CoopNews." }]
   };
 }
 
@@ -274,6 +334,75 @@ function markdownToParagraphs(markdown: string) {
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.replace(/^#+\s+/gm, "").replace(/\*\*/g, "").trim())
     .filter(Boolean);
+}
+
+function parseBodyBlocks(markdown: string): ArticleBodyBlock[] {
+  const blocks: ArticleBodyBlock[] = [];
+  for (const rawBlock of markdown.split(/\n{2,}/)) {
+    const block = rawBlock.trim();
+    if (!block) continue;
+
+    if (/^#{1,3}\s+/.test(block)) {
+      const text = block.replace(/^#+\s+/, "").replace(/\*\*/g, "").trim();
+      if (text) blocks.push({ type: "heading", text });
+      continue;
+    }
+
+    if (block.startsWith("> ")) {
+      const text = block.replace(/^>\s+/gm, "").replace(/\*\*/g, "").trim();
+      if (text) blocks.push({ type: "quote", text });
+      continue;
+    }
+
+    const cleaned = block.replace(/\*\*/g, "").trim();
+    if (cleaned) blocks.push({ type: "paragraph", text: cleaned });
+  }
+  return blocks;
+}
+
+// When the AI returned no H2 (most legacy content), inject editorial rhythm:
+// - promote one short standalone sentence in the first third to "emphasis" lead.
+// - synthesize a heading roughly every 4 paragraphs from the next paragraph's
+//   first 6 substantive words, so long reads break into scannable sections like
+//   NYT, Substack, and B9.
+function injectVisualRhythm(blocks: ArticleBodyBlock[]): ArticleBodyBlock[] {
+  const hasHeading = blocks.some((block) => block.type === "heading");
+  if (hasHeading) return blocks;
+
+  const result: ArticleBodyBlock[] = [];
+  let paragraphCount = 0;
+
+  blocks.forEach((block, index) => {
+    if (block.type !== "paragraph") {
+      result.push(block);
+      return;
+    }
+
+    paragraphCount += 1;
+
+    if (paragraphCount > 1 && paragraphCount % 4 === 1 && index < blocks.length - 1) {
+      result.push({ type: "heading", text: synthesizeHeading(block.text) });
+    }
+
+    if (paragraphCount === 2 && block.text.length < 220 && /[.!?]\s*$/.test(block.text)) {
+      result.push({ type: "emphasis", text: block.text });
+      return;
+    }
+
+    result.push(block);
+  });
+
+  return result;
+}
+
+function synthesizeHeading(paragraph: string) {
+  const words = paragraph
+    .replace(/^[“"]+/, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 7)
+    .join(" ");
+  return words.replace(/[,.;:!?]+$/, "").trim();
 }
 
 function estimateReadTime(markdown: string) {
