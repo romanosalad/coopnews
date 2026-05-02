@@ -25,7 +25,14 @@ export type CoopArticle = {
   storyJson?: { kicker: string; title: string; body: string }[];
   section: "hero" | "agora" | "popular" | "editorias" | "lafora";
   body: string[];
+  bodyBlocks?: ArticleBodyBlock[];
 };
+
+export type ArticleBodyBlock =
+  | { type: "paragraph"; text: string }
+  | { type: "heading"; text: string }
+  | { type: "emphasis"; text: string }
+  | { type: "quote"; text: string };
 
 export const coopArticles: CoopArticle[] = [
   {

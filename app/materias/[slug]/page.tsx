@@ -6,7 +6,7 @@ import { CoopWordmark } from "@/components/brand/Wordmark";
 import { Footer } from "@/components/layout/Footer";
 import { TopBar } from "@/components/layout/TopBar";
 import { ArticleVisual } from "@/components/ui/ArticleVisual";
-import { coopArticles, type CoopArticle } from "@/lib/coop-news-data";
+import { coopArticles, type ArticleBodyBlock, type CoopArticle } from "@/lib/coop-news-data";
 import { getPortalArticleBySlug } from "@/lib/portal-articles";
 
 type Props = {
@@ -39,6 +39,8 @@ export default async function MateriaPage({ params }: Props) {
   const layoutSeed = computeLayoutSeed(article);
   const keyTakeaways = buildKeyTakeaways(article);
   const numberedMilestones = buildNumberedMilestones(article);
+  const bodyBlocks: ArticleBodyBlock[] = article.bodyBlocks ?? article.body.map((text) => ({ type: "paragraph", text }));
+  const paragraphCount = bodyBlocks.filter((block) => block.type === "paragraph").length;
 
   return (
     <main>
@@ -79,17 +81,26 @@ export default async function MateriaPage({ params }: Props) {
               </aside>
             ) : null}
 
-            {article.body.map((paragraph, index) => (
-              <ArticleBodyBlock
-                article={article}
-                paragraph={paragraph}
-                index={index}
-                key={`${paragraph}-${index}`}
-                layoutSeed={layoutSeed}
-                totalParagraphs={article.body.length}
-                numberedMilestones={numberedMilestones}
-              />
-            ))}
+            {(() => {
+              let paragraphIndex = -1;
+              return bodyBlocks.map((block, blockIndex) => {
+                if (block.type !== "paragraph") {
+                  return <BodyBlockRenderer block={block} key={`${block.type}-${blockIndex}`} />;
+                }
+                paragraphIndex += 1;
+                return (
+                  <ArticleParagraphBlock
+                    article={article}
+                    paragraph={block.text}
+                    index={paragraphIndex}
+                    key={`p-${blockIndex}`}
+                    layoutSeed={layoutSeed}
+                    totalParagraphs={paragraphCount}
+                    numberedMilestones={numberedMilestones}
+                  />
+                );
+              });
+            })()}
 
             {article.isAiGenerated ? (
               <div className="article-source-box">
@@ -150,7 +161,24 @@ export default async function MateriaPage({ params }: Props) {
   );
 }
 
-type ArticleBodyBlockProps = {
+function BodyBlockRenderer({ block }: { block: ArticleBodyBlock }) {
+  if (block.type === "heading") {
+    return <h2 className="article-section-heading">{block.text}</h2>;
+  }
+  if (block.type === "emphasis") {
+    return <p className="article-emphasis">{block.text}</p>;
+  }
+  if (block.type === "quote") {
+    return (
+      <blockquote className="article-inline-quote">
+        <p>{block.text}</p>
+      </blockquote>
+    );
+  }
+  return <p>{block.text}</p>;
+}
+
+type ArticleParagraphBlockProps = {
   article: CoopArticle;
   paragraph: string;
   index: number;
@@ -159,7 +187,7 @@ type ArticleBodyBlockProps = {
   numberedMilestones: { kicker: string; title: string; body: string }[];
 };
 
-function ArticleBodyBlock({ article, paragraph, index, layoutSeed, totalParagraphs, numberedMilestones }: ArticleBodyBlockProps) {
+function ArticleParagraphBlock({ article, paragraph, index, layoutSeed, totalParagraphs, numberedMilestones }: ArticleParagraphBlockProps) {
   const showByWhyMatters = index === 0;
   const showPullQuote = totalParagraphs > 4 && index === Math.max(2, Math.floor(totalParagraphs / 3));
   const showChapterDivider = layoutSeed % 3 === 0 && totalParagraphs > 6 && index === Math.floor(totalParagraphs / 2);
