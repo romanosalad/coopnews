@@ -8,3 +8,4 @@ supabase/.temp
 /Layout/
 /design_handoff_coop_news/
 *.log
+tsconfig.tsbuildinfo
