@@ -36,6 +36,9 @@ export default async function MateriaPage({ params }: Props) {
   if (!article) notFound();
 
   const related = coopArticles.filter((item) => item.slug !== article.slug && item.section === article.section).slice(0, 3);
+  const layoutSeed = computeLayoutSeed(article);
+  const keyTakeaways = buildKeyTakeaways(article);
+  const numberedMilestones = buildNumberedMilestones(article);
 
   return (
     <main>
@@ -56,7 +59,6 @@ export default async function MateriaPage({ params }: Props) {
             <div className="article-meta">
               <span>{article.readTime.toUpperCase()}</span>
               <span>· COOP NEWS</span>
-              {typeof article.relevanceScore === "number" ? <span>· IA {Math.round(article.relevanceScore * 100)}%</span> : null}
             </div>
           </div>
           <div className="article-cover">
@@ -66,15 +68,34 @@ export default async function MateriaPage({ params }: Props) {
 
         <div className="article-body-wrap">
           <div className="article-body">
+            {keyTakeaways.length >= 2 ? (
+              <aside className="article-tldr">
+                <span className="article-tldr-label">EM RESUMO</span>
+                <ul>
+                  {keyTakeaways.map((point, index) => (
+                    <li key={index}>{point}</li>
+                  ))}
+                </ul>
+              </aside>
+            ) : null}
+
             {article.body.map((paragraph, index) => (
-              <ArticleBodyBlock article={article} paragraph={paragraph} index={index} key={`${paragraph}-${index}`} />
+              <ArticleBodyBlock
+                article={article}
+                paragraph={paragraph}
+                index={index}
+                key={`${paragraph}-${index}`}
+                layoutSeed={layoutSeed}
+                totalParagraphs={article.body.length}
+                numberedMilestones={numberedMilestones}
+              />
             ))}
 
             {article.isAiGenerated ? (
               <div className="article-source-box">
                 <span className="section-sub">TRANSPARÊNCIA EDITORIAL</span>
                 <p>
-                  Esta matéria foi traduzida, reescrita e diagramada pela curadoria do CoopNews a partir de uma fonte externa.
+                  Esta matéria foi reescrita e diagramada pela redação do CoopNews a partir de uma fonte externa.
                 </p>
                 {article.sourceUrl ? (
                   <a href={article.sourceUrl} target="_blank" rel="noreferrer" className="source-link">
@@ -97,16 +118,16 @@ export default async function MateriaPage({ params }: Props) {
               {article.isAiGenerated ? (
                 <div className="article-related-list">
                   <div className="article-related">
-                    <span className={`eyebrow ${article.eyebrowClass}`}>SCORE</span>
-                    <strong>{typeof article.relevanceScore === "number" ? `${Math.round(article.relevanceScore * 100)}% de relevância` : "Aguardando score"}</strong>
-                  </div>
-                  <div className="article-related">
                     <span className={`eyebrow ${article.eyebrowClass}`}>COOP BUSINESS</span>
                     <strong>{getCmadValue(article, "coop_business") || "Valor para associado e comunidade"}</strong>
                   </div>
                   <div className="article-related">
-                    <span className={`eyebrow ${article.eyebrowClass}`}>IMAGEM</span>
-                    <strong>{article.imageUrl ? "Imagem original do artigo" : "Placeholder editorial"}</strong>
+                    <span className={`eyebrow ${article.eyebrowClass}`}>MARKETING</span>
+                    <strong>{getCmadValue(article, "marketing") || "Posicionamento e marca"}</strong>
+                  </div>
+                  <div className="article-related">
+                    <span className={`eyebrow ${article.eyebrowClass}`}>ART/CRAFT</span>
+                    <strong>{getCmadValue(article, "art_craft") || "Direção de arte e copy"}</strong>
                   </div>
                 </div>
               ) : (
@@ -129,23 +150,68 @@ export default async function MateriaPage({ params }: Props) {
   );
 }
 
-function ArticleBodyBlock({ article, paragraph, index }: { article: CoopArticle; paragraph: string; index: number }) {
+type ArticleBodyBlockProps = {
+  article: CoopArticle;
+  paragraph: string;
+  index: number;
+  layoutSeed: number;
+  totalParagraphs: number;
+  numberedMilestones: { kicker: string; title: string; body: string }[];
+};
+
+function ArticleBodyBlock({ article, paragraph, index, layoutSeed, totalParagraphs, numberedMilestones }: ArticleBodyBlockProps) {
+  const showByWhyMatters = index === 0;
+  const showPullQuote = totalParagraphs > 4 && index === Math.max(2, Math.floor(totalParagraphs / 3));
+  const showChapterDivider = layoutSeed % 3 === 0 && totalParagraphs > 6 && index === Math.floor(totalParagraphs / 2);
+  const showNumberedBox = layoutSeed % 3 === 1 && numberedMilestones.length >= 3 && index === Math.max(3, Math.floor(totalParagraphs / 2));
+  const showMarginNote = layoutSeed % 3 === 2 && totalParagraphs > 4 && index === Math.floor(totalParagraphs / 2) + 1;
+  const showCmadGrid = totalParagraphs > 4 && index === totalParagraphs - 2;
+
   return (
     <>
       <p>{paragraph}</p>
-      {index === 0 ? (
+      {showByWhyMatters ? (
         <div className="article-context-card">
           <span className="section-sub">POR QUE IMPORTA</span>
           <strong>{getCmadValue(article, "marketing") || article.dek}</strong>
         </div>
       ) : null}
-      {index === 2 ? (
+      {showPullQuote ? (
         <aside className="article-pullquote">
           <span>Leitura CoopNews</span>
           <strong>{pickPullQuote(article)}</strong>
         </aside>
       ) : null}
-      {index === 4 ? (
+      {showChapterDivider ? (
+        <div className="article-chapter-divider">
+          <span className="article-chapter-roman">Cap. 02</span>
+          <span className="article-chapter-rule" aria-hidden="true" />
+          <span className="article-chapter-label">{getCmadValue(article, "design_ux") || "Aprofundamento estratégico"}</span>
+        </div>
+      ) : null}
+      {showNumberedBox ? (
+        <div className="article-numbered-box">
+          <span className="section-sub">OS PONTOS-CHAVE</span>
+          <ol>
+            {numberedMilestones.map((slide, slideIndex) => (
+              <li key={slideIndex}>
+                <span className="article-numbered-rank">{String(slideIndex + 1).padStart(2, "0")}</span>
+                <div>
+                  <strong>{slide.title}</strong>
+                  <p>{slide.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
+      {showMarginNote ? (
+        <aside className="article-margin-note">
+          <span>NOTA DE MARGEM</span>
+          <p>{getCmadValue(article, "art_craft") || pickPullQuote(article)}</p>
+        </aside>
+      ) : null}
+      {showCmadGrid ? (
         <div className="article-cmad-grid">
           <div>
             <span>C</span>
@@ -184,6 +250,29 @@ function pickPullQuote(article: CoopArticle) {
   const craft = getCmadValue(article, "art_craft");
   if (craft) return craft;
   return article.dek;
+}
+
+function buildKeyTakeaways(article: CoopArticle): string[] {
+  const slides = article.storyJson ?? [];
+  const points = slides.map((slide) => slide.title).filter(Boolean).slice(0, 3);
+  if (points.length >= 2) return points;
+
+  const reasons = article.decisionLog?.reasons;
+  if (Array.isArray(reasons) && reasons.length >= 2) {
+    return reasons.map(String).slice(0, 3);
+  }
+
+  return [];
+}
+
+function buildNumberedMilestones(article: CoopArticle) {
+  return (article.storyJson ?? [])
+    .filter((slide) => slide.title && slide.body)
+    .slice(0, 3);
+}
+
+function computeLayoutSeed(article: CoopArticle) {
+  return article.slug.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
 function stripHtml(value: string) {
