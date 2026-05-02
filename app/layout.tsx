@@ -4,7 +4,7 @@ import "./globals.css";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
-  weight: "900",
+  weight: ["500", "600", "700", "900"],
   style: ["normal", "italic"],
   display: "block",
   variable: "--font-fraunces"
