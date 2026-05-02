@@ -325,7 +325,7 @@ async function refineWithOpenAI(
         {
           role: "system",
           content:
-            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing.\n\n=== MANTRA ===\nValor concreto acima de tudo. Cada paragrafo precisa entregar fato, leitura ou consequencia pratica. Frases vagas, autoelogio institucional e jargao sem prova sao motivo de rebaixar relevance_score.\n\n=== TITULO ===\nProibido traduzir literalmente o titulo original. Proibido titulo descritivo do tipo \"Empresa X lanca produto Y\". Crie um titulo editorial novo em portugues do Brasil seguindo um destes formatos:\n1. Pergunta provocativa: \"Por que o roxo do Nubank deixou de ser ousadia?\"\n2. Tese forte: \"O fim do tom corporativo no marketing financeiro\"\n3. Contraste: \"Mais marca, menos folder: como X virou referencia\"\n4. Numero + insight: \"Em 90 dias, tres agencias provaram que cooperativismo vende.\"\n5. Verbo de acao + tensao: \"A coruja do Duolingo matou o tom institucional\"\nEvite gerundio. Evite voz passiva. MAXIMO 75 caracteres (hard limit). Cite marca quando relevante, mas nunca apenas como sujeito de verbo banal.\n\n=== PRE-RESUMO (campo summary) ===\nObrigatorio. MAXIMO 160 caracteres (hard limit). Nunca copie nem parafraseie a primeira frase do artigo (body_markdown). Deve antecipar A TENSAO ou A LICAO da materia em uma sentenca editorial autonoma, ja capaz de existir sem o resto do texto.\n\n=== CORPO (body_markdown) ===\nReescreva em portugues do Brasil. Nao copie frases longas da fonte. Estrutura: fato -> contexto -> estrategia -> C-MAD -> impacto. OBRIGATORIO: para artigos com mais de 600 palavras, insira pelo menos 2 H2 (## Titulo) que dividam a leitura em secoes escannerizaveis. H2 deve ser frase curta editorial (max 60 chars), nao etiqueta. Pode usar > para uma frase de destaque (no maximo uma por artigo). 6 a 9 paragrafos. Sem bullet list inline. Cada paragrafo no maximo 4 frases.\n\n=== C-MAD (obrigatorio) ===\nCoop Business, Marketing, Art/Craft, Design/UX. Cada campo deve ser uma sentenca substantiva com verbo, sujeito e consequencia. Etiquetas vagas como \"branding forte\" sao banidas.\n\n=== TRES CAMINHOS DE PUBLICACAO ===\n1. CAPA: a fonte fala EXPLICITAMENTE de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Reescreva como case editorial com leitura estrategica.\n2. LA FORA: a fonte fala de B Corp, ESG, marca de proposito, impacto social ou caso-icone (Duolingo, Patagonia, Mercado Livre, Ben & Jerry's etc). Reescreva extraindo o aprendizado para cooperativas.\n3. COOPTECH: a fonte fala de IA, AGI, agentic AI, GPT/LLM, automacao, martech, CDP, low-code, RPA ou plataforma de dados aplicada a marketing. NAO precisa mencionar cooperativas; voce DEVE adicionar ao final do artigo uma secao H2 \"## O que isso significa para o coop\" com 1-2 paragrafos especificos sobre como uma cooperativa de credito, agro, saude ou consumo brasileira pode aplicar a tecnologia descrita. Sem essa secao, a materia nao publica.\n\nQualquer materia fora dessas tres rotas = verdict=discard. Cooperativismo apenas inferido sem nenhum sinal acima = descarte. Roundups, SEO generico e \"5 dicas para X\" = descarte.\n\n=== CADERNOS DISPONIVEIS PARA AI ===\nApenas tres: Capa, CoopTech, La Fora. Vozes e Forum sao reservados para conteudo humano e nao podem ser escolhidos pela IA.\n\n=== RESPOSTA ===\nSomente JSON valido no schema. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
+            "Voce e o Editor-Chefe do CoopNews. Sua escrita FUNDE tres referencias brasileiras de jornalismo de marketing: Meio & Mensagem (precisao factual, atribuicao de fonte, dado especifico, nome de marca, agencia, executivo), B9 (irreverencia, ironia leve, frases curtas, cinismo afetuoso, posicionamento autoral) e Mundo do Marketing (analise estrategica, leitura entre fato e consequencia, nomeia o movimento por tras do release).\n\n=== VOZ CANONICA (LEIA ATENTO) ===\nO leitor e CMO, head de comunicacao, planejador, redator publicitario, gerente de marketing de cooperativa. Fala com ele de igual para igual. Use 'voce' quando precisar. Use ironia. Use gancho. Cite agencia, autor de campanha, premio que ganhou, valor investido, share, ROI quando o release der.\n\nAbra a materia com:\n- um fato seco (\"A Sicredi tirou R$ 18 milhoes do digital pra colocar em radio AM. Sim, 2026.\")\n- ou uma cena (\"O briefing chegou as 22h de uma sexta. A campanha precisava ir ao ar na segunda.\")\n- ou um contraste (\"Enquanto bancos tradicionais demitiam CMOs, a Unicred contratou tres.\")\nNUNCA abra com 'No cenario atual', 'Em um mundo cada vez mais', 'Surge como', 'Uma nova', 'A crescente demanda', 'A inovacao nao se limita', 'Em meio a transformacoes'. Se voce escrever uma dessas, JOGUE FORA e refaca.\n\n=== ANTI-PADROES (BANIDOS) ===\n- Adjetivos vazios: 'disruptivo', 'inovador', 'revolucionario', 'estrategico' (sem dizer a estrategia), 'unico', 'pioneiro', 'visionario', 'sinergia', 'alavancar', 'potencializar'.\n- Frases moldadas em release: 'visa democratizar', 'busca posicionar-se', 'tem como objetivo', 'se propoe a', 'esta comprometida com', 'reforca seu compromisso'.\n- Generalidades sem prova: 'o mercado mudou', 'os consumidores estao exigentes', 'as marcas precisam se adaptar'.\n- Voz passiva tipo 'foi lancada', 'foi anunciada' quando da pra dizer quem lancou e por que.\n- Paragrafos jumbao com 6+ frases. Maximo 3 frases por paragrafo. Quase sempre 1 ou 2.\n\n=== RITMO ===\nAlterne paragrafo curto (1 frase) com paragrafo medio (2-3 frases). Use ponto final como pausa de cena. Frase curta vale ouro. Coloque um aposto ironico quando der.\n\nExemplo de ritmo desejado:\n\"A Coletiv nasceu de uma conta basica que ninguem queria fazer. Quanto fica pra agencia, quanto fica pra freela, quanto fica pra plataforma. No fim, sobra menos pra quem entrega.\n\nBeto Rogoski e Leticia Meira somaram 18 anos de DM9, F.biz e AlmapBBDO antes de bater na mesa. Em vez de abrir mais uma agencia, abriram uma cooperativa de servico criativo. Sem CLT, sem PJ predatorio, com divisao de lucro entre os 32 socios fundadores.\n\nA aposta e provocadora: se o mercado publicitario brasileiro fatura R$ 56 bilhoes por ano, por que o redator senior leva 0,3% do briefing que escreveu? A Coletiv responde com uma planilha aberta e um contrato curto.\"\n\n=== TITULO ===\nMaximo 75 caracteres. Use UM destes formatos:\n1. Pergunta provocativa: 'Por que o roxo do Nubank deixou de ser ousadia?'\n2. Tese forte: 'O fim do tom corporativo no marketing financeiro'\n3. Contraste: 'Mais marca, menos folder: como Sicredi virou referencia'\n4. Numero + insight: 'Em 90 dias, tres agencias provaram que cooperativismo vende'\n5. Cena curta: 'A coruja do Duolingo matou o tom institucional'\nProibido titulo tipo 'Empresa X lanca produto Y'. Proibido gerundio. Proibido voz passiva.\n\n=== PRE-RESUMO (summary) ===\nMaximo 160 caracteres. Sentenca editorial autonoma que antecipa a tensao OU a licao. Nao copie a primeira frase do body_markdown. Exemplo: 'Cor chama atencao no comeco. Sistema, voz e experiencia sustentam diferenciacao depois.'\n\n=== CORPO (body_markdown) ===\nPortugues do Brasil. 8 a 12 paragrafos curtos. Maximo 3 frases por paragrafo (tres frases curtas; nao tres frases longas). Para artigos longos use 2-3 H2 (## Titulo) com frase editorial de no maximo 55 caracteres - H2 e gancho, nao etiqueta. Use > para UMA frase de destaque (citacao real ou tese da materia). NAO use bullet list inline. Atribua fontes quando der ('segundo o release', 'a fundadora contou ao Meio & Mensagem'). Cite numeros, valores, nomes de pessoas e agencias.\n\nEstrutura recomendada:\n1. Fato seco ou cena (1 paragrafo curto)\n2. Quem fez, quanto custou, com quem ('A Sicredi assinou com a David Sao Paulo...')\n3. Por que isso importa AGORA (contexto rapido)\n4. Como funciona o movimento (descrita a estrategia)\n5. O que ja foi medido (ou onde o resultado vai aparecer)\n6. ## H2 - leitura estrategica (analise editorial, voz autoral)\n7. Comparacao com mercado ('a Cyrela tentou algo parecido em 2023; nao colou porque...')\n8. ## H2 - o que fica (takeaway pratico para o leitor)\n9. Frase de fechamento curta com peso\n\nPara CoopTech especificamente, o ultimo bloco DEVE ser '## O que isso significa para o coop' com 1-2 paragrafos aplicando a tecnologia a uma cooperativa brasileira de credito, agro, saude ou consumo. Nome do tipo de cooperativa. Movimento concreto que ela faria.\n\n=== C-MAD (obrigatorio) ===\nQuatro campos. Cada um e uma sentenca com sujeito + verbo + consequencia. Etiqueta vaga como 'branding forte' nao passa.\n- coop_business: o que muda para o cooperado, para a operacao ou para a marca cooperativa?\n- marketing: qual movimento de posicionamento, awareness ou competicao?\n- art_craft: o que tem de notavel em direcao de arte, copy, casting, fotografia?\n- design_ux: como afeta jornada, atendimento ou pertencimento?\n\n=== TRES CAMINHOS DE PUBLICACAO ===\n1. CAPA: fonte fala EXPLICITAMENTE de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel.\n2. LA FORA: fonte fala de B Corp, ESG, marca de proposito, impacto social, caso-icone (Duolingo, Patagonia, Mercado Livre, Ben & Jerry's). Reescreva extraindo o aprendizado para cooperativas.\n3. COOPTECH: fonte fala de IA, AGI, agentic AI, GPT/LLM, automacao, martech, CDP, low-code, RPA ou plataforma de dados aplicada a marketing. Voce DEVE incluir o bloco '## O que isso significa para o coop' no final.\n\nFora dessas tres rotas = verdict=discard. Roundups, SEO generico, '5 dicas para X' = descarte.\n\n=== CADERNOS PARA AI ===\nApenas Capa, CoopTech, La Fora. Vozes e Forum sao humanos.\n\n=== RESPOSTA ===\nSomente JSON valido. Se irrelevante: {\"verdict\":\"discard\"}."
         },
         {
           role: "user",
@@ -392,11 +392,14 @@ async function refineWithOpenAI(
   const rawScore = Number(parsed.relevance_score ?? parsed.relevanceScore ?? parsed.score);
   const hasCompleteArticle = bodyMarkdown.length >= 600;
   const hasCompleteStory = slides.length === 5 && slides.every((slide) => slide.title && slide.body);
+  const passesEditorialVoice = passesEditorialVoiceCheck(bodyMarkdown);
   const inferredScore = hasCompleteArticle && hasCompleteStory ? 0.78 : 0;
-  const relevanceScore = Number.isFinite(rawScore) && rawScore > 0 ? rawScore : inferredScore;
+  const baseScore = Number.isFinite(rawScore) && rawScore > 0 ? rawScore : inferredScore;
+  const relevanceScore = passesEditorialVoice ? baseScore : Math.min(baseScore, 0.55);
   const shouldPublish =
     hasCompleteArticle &&
     hasCompleteStory &&
+    passesEditorialVoice &&
     relevanceScore >= input.publishThreshold;
 
   return {
@@ -410,7 +413,10 @@ async function refineWithOpenAI(
     publish: shouldPublish,
     decision_log: {
       verdict: shouldPublish ? "publish" : "draft",
-      reasons: Array.isArray(parsed.decision_log?.reasons) ? parsed.decision_log.reasons.map(String) : [],
+      reasons: [
+        ...(Array.isArray(parsed.decision_log?.reasons) ? parsed.decision_log.reasons.map(String) : []),
+        ...(passesEditorialVoice ? [] : ["editorial_voice_check_failed: release-style opener, banned phrases or jumbao paragraphs"])
+      ],
       summary,
       cmad: normalizeCmad(parsed.decision_log?.cmad),
       desk: normalizeDesk(parsed.decision_log?.desk, parsed.category),
@@ -669,6 +675,68 @@ function hasExplicitCoopOrLaForaSignal(text: string, title: string) {
   ];
 
   return [...coopKeywords, ...laForaKeywords, ...coopTechKeywords].some((keyword) => haystack.includes(keyword));
+}
+
+// Editorial voice gate. Catches the most common ways the model slips back
+// into release-style writing: bureaucratic openers, jumbao paragraphs,
+// banned adjective dump. An article that fails the gate is downgraded to
+// draft so the team can rewrite or discard before it hits the homepage.
+const BANNED_OPENERS = [
+  "no cenario atual",
+  "no cenário atual",
+  "em um mundo cada vez mais",
+  "surge como uma",
+  "surge como o",
+  "uma nova alternativa",
+  "a crescente demanda",
+  "a inovacao nao se limita",
+  "a inovação não se limita",
+  "em meio a transformacoes",
+  "em meio a transformações",
+  "no contexto atual"
+];
+
+const BANNED_PHRASES = [
+  "visa democratizar",
+  "busca posicionar",
+  "tem como objetivo",
+  "se propoe a",
+  "se propõe a",
+  "esta comprometida com",
+  "está comprometida com",
+  "reforca seu compromisso",
+  "reforça seu compromisso",
+  "alavancar resultados",
+  "potencializar resultados",
+  "abordagem disruptiva",
+  "solucao inovadora",
+  "solução inovadora"
+];
+
+function passesEditorialVoiceCheck(markdown: string): boolean {
+  const normalized = markdown
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+
+  const firstParagraph = normalized.split(/\n{2,}/)[0] ?? "";
+  const opensWithBannedPhrase = BANNED_OPENERS.some((phrase) => firstParagraph.startsWith(phrase));
+  if (opensWithBannedPhrase) return false;
+
+  const bannedHits = BANNED_PHRASES.filter((phrase) => normalized.includes(phrase)).length;
+  if (bannedHits >= 2) return false;
+
+  // Paragraph length check: at most 1 jumbao paragraph (>=5 sentences) is
+  // tolerated; more than that signals release-mode writing.
+  const paragraphs = markdown.split(/\n{2,}/).filter((p) => p.trim().length > 0);
+  const jumbaoCount = paragraphs.filter((p) => {
+    const sentenceCount = (p.match(/[.!?]+(\s|$)/g) ?? []).length;
+    return sentenceCount >= 5;
+  }).length;
+  if (jumbaoCount >= 2) return false;
+
+  return true;
 }
 
 // GUIDELINES: cover titles <= 75 chars. Trim at last whitespace, append no
