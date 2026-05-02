@@ -295,16 +295,16 @@ async function refineWithOpenAI(
         {
           role: "system",
           content:
-            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use uma voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing. Reescreva em portugues do Brasil: nao traduza literalmente e nao copie frases longas da fonte. Crie um titulo novo, editorial e provocativo; nunca apenas traduza ou copie o titulo original. Abra com o fato, depois contexto, estrategia, C-MAD e impacto. A matriz C-MAD e obrigatoria: Coop Business, Marketing, Art/Craft e Design/UX. Publique se a fonte falar explicitamente de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Para o caderno La Fora, tambem aceite cases de B Corp, ESG, impacto social, comunidade ou marketing do bem quando houver aprendizado claro para cooperativas. Descarte roundups genericos, SEO fraco e textos onde cooperativismo foi inferido sem utilidade estrategica. Cadernos validos: Capa para campanhas e movimentos de marketing; CoopTech para IA, automacao e martech; La Fora para B Corp/ESG/marketing do bem que inspire cooperativas; Vozes apenas para opiniao humana; Forum apenas para ranking/comunidade. Titulo de capa deve ter ate 75 caracteres; summary/feed deve ser um pre-resumo de ate 160 caracteres, sem copiar a primeira frase do artigo; artigos longos devem usar H2 a cada cerca de 300 palavras. Responda sempre e somente JSON valido no schema pedido. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
+            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing.\n\n=== TITULO ===\nProibido traduzir literalmente o titulo original. Proibido titulo descritivo do tipo \"Empresa X lanca produto Y\". Crie um titulo editorial novo em portugues do Brasil seguindo um destes formatos:\n1. Pergunta provocativa: \"Por que o roxo do Nubank deixou de ser ousadia?\"\n2. Tese forte: \"O fim do tom corporativo no marketing financeiro\"\n3. Contraste: \"Mais marca, menos folder: como X virou referencia\"\n4. Numero + insight: \"Em 90 dias, tres agencias provaram que cooperativismo vende.\"\n5. Verbo de acao + tensao: \"A coruja do Duolingo matou o tom institucional\"\nEvite gerundio. Evite voz passiva. Maximo 75 caracteres. Cite marca quando relevante, mas nunca apenas como sujeito de verbo banal.\n\n=== PRE-RESUMO (campo summary) ===\nObrigatorio. Maximo 160 caracteres. Nunca copie nem parafraseie a primeira frase do artigo (body_markdown). Deve antecipar A TENSAO ou A LICAO da materia em uma sentenca editorial autonoma, ja capaz de existir sem o resto do texto. Ex: \"Cor chama atencao no comeco. Sistema, voz e experiencia sustentam diferenciacao depois.\"\n\n=== CORPO ===\nReescreva em portugues do Brasil. Nao copie frases longas da fonte. Estrutura: fato -> contexto -> estrategia -> C-MAD -> impacto. Use H2 a cada ~300 palavras em artigos longos. 6 a 9 paragrafos curtos. Sem bullet list inline.\n\n=== C-MAD (obrigatorio) ===\nCoop Business, Marketing, Art/Craft, Design/UX. Cada campo deve ser uma sentenca substantiva, nao etiqueta.\n\n=== PUBLICACAO ===\nPublique se a fonte falar explicitamente de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Para La Fora, aceite tambem B Corp, ESG, impacto social, comunidade ou marketing do bem com aprendizado claro para cooperativas. Descarte roundups genericos, SEO fraco e textos onde cooperativismo foi inferido sem utilidade estrategica.\n\n=== CADERNOS ===\nCapa: campanhas e movimentos de marketing. CoopTech: IA, automacao e martech. La Fora: B Corp/ESG/marketing do bem inspirador. Vozes: opiniao humana. Forum: ranking/comunidade.\n\n=== RESPOSTA ===\nSomente JSON valido no schema. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
         },
         {
           role: "user",
           content: JSON.stringify({
             expected_schema: {
               verdict: "publish|draft|discard",
-              title: "new editorial title in Brazilian Portuguese, max 75 characters, not a literal translation",
+              title: "EDITORIAL Brazilian Portuguese title, max 75 chars. MUST follow one of the formats: question, thesis, contrast, number+insight, action+tension. NEVER literal translation. NEVER 'Brand X launches Y' style.",
               slug: "kebab-case string",
-              summary: "pre-summary for feed, max 160 characters, not the first sentence of body_markdown",
+              summary: "pre-summary for feed, max 160 characters, MUST anticipate tension or lesson, MUST be a standalone editorial sentence, MUST NOT copy or paraphrase the first sentence of body_markdown",
               category: "Criatividade|Martech|IA|Comunicacao do Bem|Automacao|La Fora|Marketing Cooperativista|Cooperativismo Global",
               body_markdown:
                 "6 to 9 short paragraphs in Brazilian Portuguese, rewritten as an original Coop News article: no bullet list, no copied lead, no source link inside the body",
@@ -355,7 +355,9 @@ async function refineWithOpenAI(
 
   const title = clean(parsed.title) || input.scraped.title;
   const bodyMarkdown = clean(parsed.body_markdown);
-  const summary = clean(parsed.summary).slice(0, 180);
+  const rawSummary = clean(parsed.summary).slice(0, 180);
+  const firstParagraph = bodyMarkdown.split(/\n{2,}/)[0]?.trim() ?? "";
+  const summary = isSummaryDuplicateOfBody(rawSummary, firstParagraph) ? "" : rawSummary;
   const slides = normalizeSlides(parsed.story_json);
   const rawScore = Number(parsed.relevance_score ?? parsed.relevanceScore ?? parsed.score);
   const hasCompleteArticle = bodyMarkdown.length >= 600;
@@ -431,6 +433,22 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
 
 function clean(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function isSummaryDuplicateOfBody(summary: string, firstParagraph: string) {
+  if (!summary || !firstParagraph) return false;
+  const normalize = (text: string) =>
+    text
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const normalizedSummary = normalize(summary);
+  const normalizedHead = normalize(firstParagraph).slice(0, normalizedSummary.length);
+  if (normalizedSummary.length < 30) return false;
+  return normalizedHead === normalizedSummary || normalizedHead.startsWith(normalizedSummary.slice(0, 60));
 }
 
 function slugify(value: string) {
