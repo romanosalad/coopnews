@@ -102,11 +102,13 @@ export default async function MateriaPage({ params }: Props) {
               });
             })()}
 
-            {article.isAiGenerated ? (
+            {article.sourceUrl || article.isAiGenerated ? (
               <div className="article-source-box">
                 <span className="section-sub">TRANSPARÊNCIA EDITORIAL</span>
                 <p>
-                  Esta matéria foi reescrita e diagramada pela redação do CoopNews a partir de uma fonte externa.
+                  {article.isAiGenerated
+                    ? "Esta matéria foi reescrita e diagramada pela redação do CoopNews a partir de uma fonte externa."
+                    : "Conteúdo curado pela redação do CoopNews."}
                 </p>
                 {article.sourceUrl ? (
                   <a href={article.sourceUrl} target="_blank" rel="noreferrer" className="source-link">
@@ -114,12 +116,7 @@ export default async function MateriaPage({ params }: Props) {
                   </a>
                 ) : null}
               </div>
-            ) : (
-              <p>
-                Esta visualização ainda usa conteúdo estático de demonstração. Quando a ingestão entrar, este mesmo desenho receberá matérias reais,
-                aprovadas pela curadoria antes de aparecerem no portal.
-              </p>
-            )}
+            ) : null}
           </div>
 
           <aside className="article-sidebar">
@@ -200,8 +197,8 @@ function ArticleParagraphBlock({ article, paragraph, index, layoutSeed, totalPar
       <p>{paragraph}</p>
       {showByWhyMatters ? (
         <div className="article-context-card">
-          <span className="section-sub">POR QUE IMPORTA</span>
-          <strong>{getCmadValue(article, "marketing") || article.dek}</strong>
+          <span className="section-sub">POR QUE IMPORTA PARA O COOP</span>
+          <strong>{whyItMattersForCoop(article)}</strong>
         </div>
       ) : null}
       {showPullQuote ? (
@@ -265,6 +262,31 @@ function ArticleParagraphBlock({ article, paragraph, index, layoutSeed, totalPar
       ) : null}
     </>
   );
+}
+
+// Always frame the "Por que importa" block from the cooperative angle. The
+// AI is instructed to do this in C-MAD.marketing, but if the field came back
+// generic OR doesn't mention coop, we prepend a coop framing so the reader
+// always feels the article is talking to them as a cooperative operator.
+function whyItMattersForCoop(article: CoopArticle): string {
+  const cmadMarketing = getCmadValue(article, "marketing");
+  const cmadCoopBusiness = getCmadValue(article, "coop_business");
+  const candidates = [cmadCoopBusiness, cmadMarketing, article.dek].map((value) => value.trim()).filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (mentionsCoop(candidate)) return candidate;
+  }
+
+  const base = candidates[0] ?? "Posicionamento, marca e diferenciacao competitiva.";
+  return `Para cooperativas: ${base}`;
+}
+
+function mentionsCoop(text: string) {
+  const normalized = text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+  return ["cooperativ", "coop ", "credit union", "mutual", "associad", "cooperado"].some((kw) => normalized.includes(kw));
 }
 
 function getCmadValue(article: CoopArticle, key: string) {
