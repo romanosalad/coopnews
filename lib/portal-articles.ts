@@ -381,14 +381,27 @@ function markdownToParagraphs(markdown: string) {
     .filter(Boolean);
 }
 
+// Parser tolerante: normaliza markdown sujo do AI antes de splitar.
+// Cobre 4 padrões observados em produção:
+//   1. AI gerou TUDO em um bloco só (sem \n\n entre parágrafos).
+//   2. AI escreveu "## H2 - Título" inline no meio do parágrafo.
+//   3. AI escreveu "## Título" inline (sem H2 prefix mas inline).
+//   4. Parágrafos enormes (5+ frases) que precisam ser quebrados pra
+//      escaneabilidade tipo Smart Brevity.
 function parseBodyBlocks(markdown: string): ArticleBodyBlock[] {
+  const normalized = normalizeMarkdown(markdown);
   const blocks: ArticleBodyBlock[] = [];
-  for (const rawBlock of markdown.split(/\n{2,}/)) {
+
+  for (const rawBlock of normalized.split(/\n{2,}/)) {
     const block = rawBlock.trim();
     if (!block) continue;
 
     if (/^#{1,3}\s+/.test(block)) {
-      const text = block.replace(/^#+\s+/, "").replace(/\*\*/g, "").trim();
+      const text = block
+        .replace(/^#+\s+/, "")
+        .replace(/^H[1-6]\s*[-—:]\s*/i, "") // remove "H2 - " literal
+        .replace(/\*\*/g, "")
+        .trim();
       if (text) blocks.push({ type: "heading", text });
       continue;
     }
@@ -400,9 +413,62 @@ function parseBodyBlocks(markdown: string): ArticleBodyBlock[] {
     }
 
     const cleaned = block.replace(/\*\*/g, "").trim();
-    if (cleaned) blocks.push({ type: "paragraph", text: cleaned });
+    if (!cleaned) continue;
+
+    // Quebra parágrafos jumbão em chunks de no máx 3 frases.
+    for (const chunk of splitJumboParagraph(cleaned)) {
+      blocks.push({ type: "paragraph", text: chunk });
+    }
   }
   return blocks;
+}
+
+// Pré-processamento agressivo: força \n\n antes/depois de qualquer ##
+// (mesmo embutido no meio de um parágrafo), e quebra blocos sem nenhum
+// \n\n em parágrafos por contagem de frases.
+function normalizeMarkdown(markdown: string): string {
+  let text = (markdown ?? "").trim();
+  if (!text) return "";
+
+  // Garante \n\n antes de qualquer ## que esteja inline.
+  text = text.replace(/([^\n])\s+(##+\s+)/g, "$1\n\n$2");
+  // Garante \n\n depois do título do heading: pega "## algo até final de
+  // sentença" e mete \n\n antes da próxima sentença começar.
+  text = text.replace(/(^|\n)(#{1,3}\s+[^\n]+?)(?=\s+[A-ZÁÉÍÓÚÂÊÔÃÕÇ][^\n]{6,})/g, "$1$2\n\n");
+
+  // Se o texto inteiro veio sem \n\n, fragmenta por sentenças.
+  if (!/\n\n/.test(text)) {
+    text = paragraphizeBySentences(text);
+  }
+
+  return text;
+}
+
+// Quebra um parágrafo em pedaços de até 3 frases. Detecta fim de frase
+// por [.!?] seguido de espaço + maiúscula. Preserva H2 que já foi
+// extraído pra fora antes (essa fn só recebe parágrafo puro).
+function splitJumboParagraph(paragraph: string): string[] {
+  const sentences = paragraph.match(/[^.!?]+[.!?]+(?:\s|$)/g);
+  if (!sentences || sentences.length <= 3) return [paragraph];
+
+  const chunks: string[] = [];
+  for (let i = 0; i < sentences.length; i += 3) {
+    chunks.push(sentences.slice(i, i + 3).join("").trim());
+  }
+  return chunks.filter(Boolean);
+}
+
+// Texto sem nenhuma quebra dupla → reconstrói parágrafos a cada 3
+// frases. Resgate de markdown 100% colapsado.
+function paragraphizeBySentences(text: string): string {
+  const sentences = text.match(/[^.!?]+[.!?]+(?:\s|$)/g);
+  if (!sentences || sentences.length <= 3) return text;
+
+  const groups: string[] = [];
+  for (let i = 0; i < sentences.length; i += 3) {
+    groups.push(sentences.slice(i, i + 3).join("").trim());
+  }
+  return groups.join("\n\n");
 }
 
 // When the AI returned no H2 (most legacy content), inject editorial rhythm:
@@ -410,31 +476,62 @@ function parseBodyBlocks(markdown: string): ArticleBodyBlock[] {
 // - synthesize a heading roughly every 4 paragraphs from the next paragraph's
 //   first 6 substantive words, so long reads break into scannable sections like
 //   NYT, Substack, and B9.
+// Injeta ritmo editorial em qualquer artigo:
+// - Se já tem H2: promove o primeiro parágrafo curto após cada H2 a "emphasis"
+//   (lead da sub-seção) — comum em NYT e Bloomberg.
+// - Se NÃO tem H2: sintetiza um a cada 4 parágrafos a partir das primeiras
+//   palavras + promove o 2º parágrafo a emphasis.
+// - Em ambos os casos: parágrafos terminados em "?" viram quote (gancho
+//   provocativo destacado), uma vez no máximo por artigo.
 function injectVisualRhythm(blocks: ArticleBodyBlock[]): ArticleBodyBlock[] {
   const hasHeading = blocks.some((block) => block.type === "heading");
-  if (hasHeading) return blocks;
-
   const result: ArticleBodyBlock[] = [];
   let paragraphCount = 0;
+  let questionPromoted = false;
+  let lastWasHeading = false;
 
   blocks.forEach((block, index) => {
     if (block.type !== "paragraph") {
       result.push(block);
+      lastWasHeading = block.type === "heading";
       return;
     }
 
     paragraphCount += 1;
+    const text = block.text;
+    const isShort = text.length < 260;
+    const endsWithQuestion = /\?\s*$/.test(text);
 
-    if (paragraphCount > 1 && paragraphCount % 4 === 1 && index < blocks.length - 1) {
-      result.push({ type: "heading", text: synthesizeHeading(block.text) });
+    // Cenário com headings do AI: primeiro parágrafo curto após cada H2 vira
+    // emphasis. Vira lead visual da sub-seção sem perder o conteúdo.
+    if (hasHeading && lastWasHeading && isShort && /[.!?]\s*$/.test(text)) {
+      result.push({ type: "emphasis", text });
+      lastWasHeading = false;
+      return;
     }
 
-    if (paragraphCount === 2 && block.text.length < 220 && /[.!?]\s*$/.test(block.text)) {
-      result.push({ type: "emphasis", text: block.text });
+    // Cenário legado sem headings: sintetiza a cada 4 parágrafos.
+    if (!hasHeading && paragraphCount > 1 && paragraphCount % 4 === 1 && index < blocks.length - 1) {
+      result.push({ type: "heading", text: synthesizeHeading(text) });
+    }
+
+    // Cenário legado: 2º parágrafo curto vira emphasis.
+    if (!hasHeading && paragraphCount === 2 && isShort && /[.!?]\s*$/.test(text)) {
+      result.push({ type: "emphasis", text });
+      lastWasHeading = false;
+      return;
+    }
+
+    // Pergunta curta no meio do texto → gancho destacado (uma vez).
+    if (!questionPromoted && endsWithQuestion && isShort && paragraphCount > 2) {
+      result.push({ type: "quote", text });
+      questionPromoted = true;
+      lastWasHeading = false;
       return;
     }
 
     result.push(block);
+    lastWasHeading = false;
   });
 
   return result;
