@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -63,7 +63,132 @@ a { color: inherit; text-decoration: none; }
 
 .section-rule { border: 0; height: 1px; background: var(--ink); max-width: 1280px; margin: 0 auto; opacity: 0.85; }
 
-/* /admin — editor portal */
+/* ShareBar — barra de compartilhamento ao final do artigo. Inline horizontal,
+   3 canais (copy / whatsapp / linkedin) com UTM por canal. Feedback visual
+   no botão "Copiar" troca para check lime durante 2.2s. */
+.share-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin: 48px 0 40px; padding: 22px 24px; background: #fff; border: 1px solid rgba(0,0,0,0.06); border-left: 4px solid var(--ink); }
+.share-bar-label { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mute); }
+.share-bar-buttons { display: flex; flex-wrap: wrap; gap: 10px; flex: 1; justify-content: flex-end; }
+.share-bar-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--paper); color: var(--ink); border: 1px solid rgba(0,0,0,0.18); font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; cursor: pointer; transition: background .14s, color .14s, border-color .14s, transform .12s; }
+.share-bar-btn:hover { background: var(--ink); color: var(--brand); border-color: var(--ink); transform: translateY(-1px); }
+.share-bar-btn-icon { display: inline-flex; align-items: center; }
+.share-bar-btn.is-copied { background: var(--brand); color: var(--ink); border-color: var(--brand); }
+.share-bar-btn.is-copied:hover { background: var(--brand); color: var(--ink); transform: none; }
+.share-bar-btn--whatsapp:hover { background: #128C7E; color: #fff; border-color: #128C7E; }
+.share-bar-btn--linkedin:hover { background: #0A66C2; color: #fff; border-color: #0A66C2; }
+@media (max-width: 540px) {
+  .share-bar { padding: 18px 18px; gap: 12px; }
+  .share-bar-buttons { justify-content: flex-start; }
+  .share-bar-btn-label { display: none; }
+  .share-bar-btn { padding: 12px 14px; }
+}
+html.focus-mode .share-bar { background: rgba(255,255,255,0.6); border-color: rgba(26,20,12,0.1); border-left-color: var(--ink); }
+
+/* DecidorGate — paywall de cadastro (Camada 2). Aparece após o 3º parágrafo
+   de PROTOCOLOs para visitantes sem cookie briefing_decisor. */
+.decidor-gate { position: relative; margin: 8px 0 48px; padding-top: 64px; }
+.decidor-gate-fade { position: absolute; top: -120px; left: 0; right: 0; height: 160px; background: linear-gradient(to bottom, rgba(250,250,247,0) 0%, rgba(250,250,247,0.85) 50%, var(--paper) 100%); pointer-events: none; z-index: 1; }
+.decidor-gate-card { position: relative; z-index: 2; padding: 36px 36px 32px; background: #fff; border: 1px solid rgba(0,0,0,0.08); border-top: 4px solid var(--ink); box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
+.decidor-gate-eyebrow { display: inline-block; padding: 4px 10px 3px; background: var(--ink); color: var(--brand); font-family: var(--font-ui); font-size: 10px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; }
+.decidor-gate-title { margin: 14px 0 12px; font-family: var(--font-display); font-weight: 700; font-size: 38px; line-height: 1.1; letter-spacing: -0.01em; color: var(--ink); }
+.decidor-gate-title em { font-style: italic; font-weight: 700; color: var(--accent); }
+.decidor-gate-tag { margin: 0 0 24px; font-family: var(--font-display); font-style: italic; font-size: 17px; line-height: 1.5; color: var(--mute); max-width: 580px; }
+.decidor-gate-form { display: flex; flex-direction: column; gap: 14px; }
+.decidor-gate-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.decidor-gate-field { display: flex; flex-direction: column; gap: 6px; }
+.decidor-gate-field span { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+.decidor-gate-field input,
+.decidor-gate-field select { padding: 12px 14px; border: 1px solid rgba(0,0,0,0.18); background: var(--paper); font-family: var(--font-body); font-size: 15px; color: var(--ink); outline: none; border-radius: 0; }
+.decidor-gate-field input:focus,
+.decidor-gate-field select:focus { border-color: var(--ink); }
+.decidor-gate-error { margin: 4px 0 0; padding: 10px 14px; background: rgba(255,90,54,0.08); border-left: 3px solid var(--accent); color: var(--ink); font-family: var(--font-body); font-size: 13px; }
+.decidor-gate-submit { margin-top: 8px; padding: 16px; background: var(--ink); color: var(--brand); border: 0; font-family: var(--font-ui); font-size: 13px; font-weight: 700; letter-spacing: 0.18em; cursor: pointer; transition: background .14s, color .14s; }
+.decidor-gate-submit:hover:not(:disabled) { background: var(--accent); color: var(--paper); }
+.decidor-gate-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+.decidor-gate-fineprint { margin: 14px 0 0; font-family: var(--font-body); font-size: 12px; line-height: 1.5; color: var(--mute); }
+@media (max-width: 720px) {
+  .decidor-gate-card { padding: 28px 22px 24px; }
+  .decidor-gate-title { font-size: 30px; }
+  .decidor-gate-row { grid-template-columns: 1fr; }
+}
+/* Modo Foco: gate fica suave mas mantém função */
+html.focus-mode .decidor-gate-card { background: rgba(255,255,255,0.7); }
+html.focus-mode .decidor-gate-fade { background: linear-gradient(to bottom, rgba(251,247,238,0) 0%, rgba(251,247,238,0.85) 50%, #FBF7EE 100%); }
+
+/* Focus Mode toggle button — sit no header da matéria, abaixo do back link.
+   Discreto desligado, claramente "ativo" quando ligado. */
+.article-hero-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.focus-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; background: transparent; color: var(--ink); border: 1px solid rgba(0,0,0,0.2); font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: background .14s, color .14s, border-color .14s; }
+.focus-toggle:hover { border-color: var(--ink); background: var(--ink); color: var(--brand); }
+.focus-toggle.is-on { background: var(--ink); color: var(--brand); border-color: var(--ink); }
+.focus-toggle-icon { display: inline-flex; }
+.focus-toggle-state { padding: 1px 6px; background: rgba(0,0,0,0.06); font-size: 10px; letter-spacing: 0.2em; }
+.focus-toggle.is-on .focus-toggle-state { background: var(--brand); color: var(--ink); }
+
+/* Reading progress — barra fina no topo, alimentada por --reading-progress.
+   Renderiza apenas dentro de .focus-mode pra não competir com o site normal. */
+.focus-mode::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 3px; background: rgba(0,0,0,0.06); z-index: 200; pointer-events: none; }
+.focus-mode::after { content: ""; position: fixed; top: 0; left: 0; height: 3px; width: calc(var(--reading-progress, 0) * 100%); background: var(--brand); z-index: 201; pointer-events: none; transition: width .12s linear; }
+
+/* === MODO FOCO ===
+   Tudo aqui é escopado em html.focus-mode → reverte 100% ao desligar.
+   Paleta: off-white quente (#FBF7EE) + texto warm-ink (#1A140C) — reduz
+   fadiga visual em sessões longas vs branco puro. Tipografia: Inter 400/500,
+   line-height 2.0, fonte 22px, coluna estreita (~62 chars/linha). */
+html.focus-mode { background: #FBF7EE; }
+html.focus-mode body { background: #FBF7EE; color: #1A140C; }
+html.focus-mode .brand-corner { display: none; }
+html.focus-mode .topbar { background: #1A140C; opacity: 0.7; transition: opacity .2s; }
+html.focus-mode .topbar:hover { opacity: 1; }
+html.focus-mode .article-page { padding-top: 24px; }
+html.focus-mode .article-hero { grid-template-columns: minmax(0, 1fr); padding: 64px 24px 32px; }
+html.focus-mode .article-cover { display: none; }
+html.focus-mode .article-hero-text { max-width: 680px; margin: 0 auto; }
+html.focus-mode .article-hero h1 { font-family: var(--font-fraunces); font-size: 44px; line-height: 1.12; font-weight: 600; color: #1A140C; }
+html.focus-mode .article-dek { font-family: var(--font-inter), system-ui, sans-serif; font-style: normal; font-size: 19px; line-height: 1.6; color: #3A3025; font-weight: 400; }
+html.focus-mode .article-body-wrap { grid-template-columns: 1fr; max-width: 780px; padding: 24px 24px 96px; }
+html.focus-mode .article-sidebar { display: none; }
+html.focus-mode .article-body { max-width: 100%; }
+html.focus-mode .article-body p { font-family: var(--font-inter), system-ui, sans-serif; font-size: 22px; line-height: 2.0; font-weight: 400; color: #2A2218; margin: 0 0 32px; padding: 12px 16px; border-left: 2px solid transparent; transition: border-color .25s, color .25s, background .25s; border-radius: 2px; }
+html.focus-mode .article-body p.is-current-paragraph { background: rgba(199,245,66,0.18); border-left-color: var(--brand); color: #0E0A05; }
+html.focus-mode .article-body h2 { font-family: var(--font-fraunces); font-size: 28px; line-height: 1.25; font-weight: 600; color: #1A140C; margin: 48px 0 16px; letter-spacing: 0; }
+html.focus-mode .article-body h2.article-section-heading::before { background: var(--brand); }
+html.focus-mode .article-body p.article-emphasis { font-family: var(--font-fraunces); font-size: 26px; line-height: 1.45; font-style: italic; font-weight: 600; color: #1A140C; }
+html.focus-mode .article-body .article-inline-quote { border-left-color: var(--brand); }
+html.focus-mode .article-body .article-inline-quote p { font-family: var(--font-fraunces); font-size: 24px; line-height: 1.4; color: #1A140C; }
+html.focus-mode .article-body p:first-child::first-letter { font-family: var(--font-fraunces); font-weight: 600; color: var(--brand-2); padding: 6px 8px 0 0; font-size: 64px; }
+/* Distrações decorativas escondidas pra não puxar o olho do leitor TDAH/TEA */
+html.focus-mode .article-context-card,
+html.focus-mode .article-pullquote,
+html.focus-mode .article-numbered-box,
+html.focus-mode .article-margin-note,
+html.focus-mode .article-chapter-divider,
+html.focus-mode .article-cmad-grid { display: none; }
+/* TL;DR fica visível mas com contraste mais suave que o site normal */
+html.focus-mode .article-tldr { border: 1px solid rgba(26,20,12,0.1); border-left-color: var(--brand); background: rgba(255,255,255,0.6); padding: 22px 24px; }
+html.focus-mode .article-tldr-list li { font-family: var(--font-inter), system-ui, sans-serif; font-size: 19px; line-height: 1.55; font-weight: 500; font-style: normal; color: #1A140C; }
+html.focus-mode .article-tldr-paragraph { font-family: var(--font-inter), system-ui, sans-serif; font-size: 19px; line-height: 1.55; font-weight: 500; color: #1A140C; }
+html.focus-mode .article-tldr-label { background: #1A140C; color: var(--brand); }
+/* Source box mantém função (link da fonte) com tom quente */
+html.focus-mode .article-source-box { background: rgba(255,255,255,0.6); border-color: rgba(26,20,12,0.1); }
+@media (prefers-reduced-motion: reduce) {
+  html.focus-mode .article-body p { transition: none; }
+  .focus-mode::after { transition: none; }
+}
+
+/* Cadrinho badge — indicador de caderno (RADAR / PROTOCOLO / DOSSIÊ).
+   Sit acima do título, abaixo do eyebrow editorial. fa.md V3.1. */
+.cadrinho-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; line-height: 1; vertical-align: middle; }
+.cadrinho-badge__sep { opacity: 0.55; font-weight: 400; }
+.cadrinho-badge__label { font-weight: 800; letter-spacing: 0.18em; }
+.cadrinho-badge__time { font-weight: 700; }
+.cadrinho-badge__tipo { font-weight: 600; opacity: 0.9; }
+.cadrinho-badge--radar { background: #1E3A8A; color: #FAFAF7; }
+.cadrinho-badge--protocolo { background: #B45309; color: #FAFAF7; }
+.cadrinho-badge--dossie { background: #3730A3; color: #FAFAF7; }
+.article-caderno-badge { margin-top: 12px; margin-bottom: 6px; align-self: flex-start; }
+
+/* /admin â€” editor portal */
 .admin-shell { min-height: 100vh; background: var(--paper); color: var(--ink); }
 .admin-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: var(--ink); color: var(--paper); border-bottom: 1px solid var(--hairline); }
 .admin-brand { display: inline-flex; align-items: center; gap: 12px; }
@@ -79,7 +204,7 @@ a { color: inherit; text-decoration: none; }
 .admin-nav-signout:hover { border-color: var(--accent); color: var(--accent); }
 .admin-main { max-width: 1100px; margin: 0 auto; padding: 48px 32px; }
 
-/* /admin/login — uses the public TopBar so it feels like part of the site */
+/* /admin/login â€” uses the public TopBar so it feels like part of the site */
 .login-page { position: relative; background: var(--paper); min-height: 100vh; }
 .login-section { max-width: 1280px; margin: 0 auto; padding: 88px 32px 96px 220px; display: grid; place-items: center; }
 .login-card { width: 100%; max-width: 480px; padding: 44px 40px; background: #fff; border-top: 4px solid var(--brand); border: 1px solid rgba(0,0,0,0.08); }
@@ -203,7 +328,7 @@ a { color: inherit; text-decoration: none; }
 .composer-sidebar-card h4 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 8px 0 12px; letter-spacing: -0.005em; }
 .composer-sidebar-state { color: var(--accent); }
 .composer-sidebar-list { padding: 0; margin: 12px 0 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-body); font-size: 13px; line-height: 1.5; color: var(--mute); }
-.composer-sidebar-list li::before { content: "→ "; color: var(--brand); font-weight: 700; }
+.composer-sidebar-list li::before { content: "â†’ "; color: var(--brand); font-weight: 700; }
 
 .composer-assist { border-top-color: var(--accent); }
 .composer-assist-actions { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
@@ -239,7 +364,7 @@ a { color: inherit; text-decoration: none; }
   .admin-row-date { margin-left: 0; }
 }
 
-/* /todos — TabNews-style minimalist feed: no images, just title + meta line */
+/* /todos â€” TabNews-style minimalist feed: no images, just title + meta line */
 .todos-shell { max-width: 880px; margin: 0 auto; padding: 64px 32px 96px 220px; background: var(--paper); }
 .todos-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid rgba(0, 0, 0, 0.08); margin-bottom: 20px; }
 .todos-tabs { display: flex; gap: 22px; }
@@ -392,11 +517,12 @@ a { color: inherit; text-decoration: none; }
 .article-cmad-grid span { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; margin-bottom: 14px; background: var(--brand); font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--ink); }
 .article-cmad-grid strong { display: block; margin-bottom: 8px; font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
 .article-cmad-grid p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--mute); }
-.article-tldr { margin: 0 0 40px; padding: 24px 28px; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--hairline-light); background: #fff; }
-.article-tldr-label { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mute); }
-.article-tldr ul { margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
-.article-tldr li { position: relative; padding-left: 22px; font-family: var(--font-display); font-size: 18px; line-height: 1.36; font-style: italic; font-weight: 600; color: var(--ink); }
-.article-tldr li::before { content: ""; position: absolute; left: 0; top: 12px; width: 12px; height: 4px; background: var(--brand); }
+.article-tldr { margin: 0 0 44px; padding: 24px 28px 26px; background: #fff; border: 1px solid rgba(0,0,0,0.06); border-left: 4px solid var(--brand); box-shadow: 0 1px 0 rgba(0,0,0,0.02); }
+.article-tldr-label { display: inline-block; padding: 4px 10px 3px; background: var(--ink); color: var(--brand); font-family: var(--font-ui); font-size: 10px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; }
+.article-tldr-list { margin: 16px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.article-tldr-list li { position: relative; padding-left: 24px; font-family: var(--font-display); font-size: 18px; line-height: 1.4; font-weight: 600; color: var(--ink); letter-spacing: -0.005em; }
+.article-tldr-list li::before { content: ""; position: absolute; left: 0; top: 11px; width: 14px; height: 3px; background: var(--brand); border-radius: 1px; }
+.article-tldr-paragraph { margin: 16px 0 0; font-family: var(--font-display); font-size: 19px; line-height: 1.42; font-weight: 600; color: var(--ink); letter-spacing: -0.005em; }
 .article-chapter-divider { display: flex; align-items: center; gap: 18px; margin: 56px 0 36px; }
 .article-chapter-roman { font-family: var(--font-display); font-style: italic; font-weight: 900; font-size: 20px; color: var(--accent); letter-spacing: 0.04em; }
 .article-chapter-rule { flex: 1; height: 1px; background: var(--ink); }
@@ -470,3 +596,4 @@ a { color: inherit; text-decoration: none; }
   .article-numbered-box strong { font-size: 19px; }
   .article-tldr li { font-size: 17px; }
 }
+

@@ -5,8 +5,14 @@ import { BrandCornerMotif } from "@/components/brand/BrandCornerMotif";
 import { CoopWordmark } from "@/components/brand/Wordmark";
 import { Footer } from "@/components/layout/Footer";
 import { TopBar } from "@/components/layout/TopBar";
+import { ArticleTldr } from "@/components/ui/ArticleTldr";
 import { ArticleVisual } from "@/components/ui/ArticleVisual";
+import { CadrinhoBadge, inferCaderno } from "@/components/ui/CadrinhoBadge";
+import { DecidorGate } from "@/components/ui/DecidorGate";
+import { FocusModeToggle } from "@/components/ui/FocusModeToggle";
+import { ShareBar } from "@/components/ui/ShareBar";
 import { coopArticles, type ArticleBodyBlock, type CoopArticle } from "@/lib/coop-news-data";
+import { isDecisor } from "@/lib/decisor-actions";
 import { getPortalArticleBySlug } from "@/lib/portal-articles";
 
 type Props = {
@@ -37,10 +43,17 @@ export default async function MateriaPage({ params }: Props) {
 
   const related = coopArticles.filter((item) => item.slug !== article.slug && item.section === article.section).slice(0, 3);
   const layoutSeed = computeLayoutSeed(article);
-  const keyTakeaways = buildKeyTakeaways(article);
   const numberedMilestones = buildNumberedMilestones(article);
   const bodyBlocks: ArticleBodyBlock[] = article.bodyBlocks ?? article.body.map((text) => ({ type: "paragraph", text }));
-  const paragraphCount = bodyBlocks.filter((block) => block.type === "paragraph").length;
+  const caderno = inferCaderno(article.bodyMarkdown ?? "", article.eyebrow);
+
+  // Camada 2 (Decisor): PROTOCOLOs ficam gateados após o 3º parágrafo até o
+  // visitante se cadastrar. Cookie httpOnly briefing_decisor=1 libera no
+  // device. RADAR fica livre. DOSSIÊ vai pro paywall financeiro na Fase 2.
+  const decisor = await isDecisor();
+  const requiresGate = caderno === "PROTOCOLO" && !decisor;
+  const visibleBlocks = requiresGate ? sliceBeforeGate(bodyBlocks, 3) : bodyBlocks;
+  const paragraphCount = visibleBlocks.filter((block) => block.type === "paragraph").length;
 
   return (
     <main>
@@ -54,8 +67,16 @@ export default async function MateriaPage({ params }: Props) {
       <article className="article-page">
         <header className="article-hero">
           <div className="article-hero-text">
-            <Link href="/" className="article-back">← VOLTAR PARA HOME</Link>
+            <div className="article-hero-controls">
+              <Link href="/" className="article-back">← VOLTAR PARA HOME</Link>
+              <FocusModeToggle />
+            </div>
             <span className={`eyebrow ${article.eyebrowClass}`}>{article.eyebrow}</span>
+            <CadrinhoBadge
+              caderno={caderno}
+              readTime={article.readTime}
+              className="article-caderno-badge"
+            />
             <h1 dangerouslySetInnerHTML={{ __html: article.titleHtml }} />
             <p className="article-dek">{article.dek}</p>
             <div className="article-meta">
@@ -70,20 +91,11 @@ export default async function MateriaPage({ params }: Props) {
 
         <div className="article-body-wrap">
           <div className="article-body">
-            {keyTakeaways.length >= 2 ? (
-              <aside className="article-tldr">
-                <span className="article-tldr-label">EM RESUMO</span>
-                <ul>
-                  {keyTakeaways.map((point, index) => (
-                    <li key={index}>{point}</li>
-                  ))}
-                </ul>
-              </aside>
-            ) : null}
+            <ArticleTldr tldr={article.tldr} />
 
             {(() => {
               let paragraphIndex = -1;
-              return bodyBlocks.map((block, blockIndex) => {
+              return visibleBlocks.map((block, blockIndex) => {
                 if (block.type !== "paragraph") {
                   return <BodyBlockRenderer block={block} key={`${block.type}-${blockIndex}`} />;
                 }
@@ -102,7 +114,13 @@ export default async function MateriaPage({ params }: Props) {
               });
             })()}
 
-            {article.sourceUrl || article.isAiGenerated ? (
+            {requiresGate ? <DecidorGate sourceSlug={article.slug} sourceCaderno="PROTOCOLO" /> : null}
+
+            {!requiresGate ? (
+              <ShareBar title={stripHtml(article.titleHtml)} slug={article.slug} />
+            ) : null}
+
+            {!requiresGate && (article.sourceUrl || article.isAiGenerated) ? (
               <div className="article-source-box">
                 <span className="section-sub">TRANSPARÊNCIA EDITORIAL</span>
                 <p>
@@ -302,17 +320,23 @@ function pickPullQuote(article: CoopArticle) {
   return article.dek;
 }
 
-function buildKeyTakeaways(article: CoopArticle): string[] {
-  const slides = article.storyJson ?? [];
-  const points = slides.map((slide) => slide.title).filter(Boolean).slice(0, 3);
-  if (points.length >= 2) return points;
-
-  const reasons = article.decisionLog?.reasons;
-  if (Array.isArray(reasons) && reasons.length >= 2) {
-    return reasons.map(String).slice(0, 3);
+// Para o gate do Decisor: corta o body após N parágrafos visíveis. Headings,
+// quotes e emphasis intermediários no preview são preservados (mantêm ritmo
+// editorial). Headings que ficariam órfãos no fim são descartados.
+function sliceBeforeGate(blocks: ArticleBodyBlock[], maxParagraphs: number): ArticleBodyBlock[] {
+  const out: ArticleBodyBlock[] = [];
+  let kept = 0;
+  for (const block of blocks) {
+    if (block.type === "paragraph") {
+      if (kept >= maxParagraphs) break;
+      kept += 1;
+    }
+    out.push(block);
   }
-
-  return [];
+  while (out.length > 0 && out[out.length - 1].type !== "paragraph") {
+    out.pop();
+  }
+  return out;
 }
 
 function buildNumberedMilestones(article: CoopArticle) {
