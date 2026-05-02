@@ -12,7 +12,7 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return coopArticles.map((article) => ({ slug: article.slug }));
@@ -74,15 +74,17 @@ export default async function MateriaPage({ params }: Props) {
               </p>
             </blockquote>
             {article.isAiGenerated ? (
-              <p>
-                Esta matéria foi refinada por IA a partir de uma fonte externa e preserva a imagem original capturada do artigo quando disponível.
+              <div className="article-source-box">
+                <span className="section-sub">TRANSPARÊNCIA EDITORIAL</span>
+                <p>
+                  Esta matéria foi refinada por IA a partir de uma fonte externa. Quando disponível, a imagem usada é a imagem original capturada do artigo.
+                </p>
                 {article.sourceUrl ? (
-                  <>
-                    {" "}
-                    <a href={article.sourceUrl} target="_blank" rel="noreferrer">Ver fonte original.</a>
-                  </>
+                  <a href={article.sourceUrl} target="_blank" rel="noreferrer" className="source-link">
+                    Ler matéria original
+                  </a>
                 ) : null}
-              </p>
+              </div>
             ) : (
               <p>
                 Esta visualização ainda usa conteúdo estático de demonstração. Quando a ingestão entrar, este mesmo desenho receberá matérias reais,
