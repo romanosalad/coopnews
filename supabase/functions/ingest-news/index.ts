@@ -155,13 +155,25 @@ Deno.serve(async (request) => {
         continue;
       }
 
+      // C-MAD art direction: when the source article shipped no og:image,
+      // call our internal creative-director agent to compose a cover via
+      // OpenAI gpt-image-1, store it in Supabase Storage, and use that URL.
+      const coverImageUrl = await ensureCoverImage({
+        scrapedImageUrl: scraped.imageUrl,
+        refined,
+        slug: refined.slug || slugify(refined.title),
+        supabase,
+        openaiKey,
+        dryRun
+      });
+
       const record = {
         title: refined.title,
         slug: refined.slug || slugify(refined.title),
         body_markdown: refined.body_markdown,
         source_url: item.link,
         story_json: refined.story_json,
-        image_url: scraped.imageUrl,
+        image_url: coverImageUrl,
         status: refined.publish ? "published" : "draft",
         geo_location: refined.geo_location,
         category: refined.category || "Marketing Cooperativista",
@@ -453,6 +465,136 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
 
 function clean(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+// C-MAD ART DIRECTION AGENT
+// When the source article has no usable cover, the editor-in-chief escalates
+// to our internal creative-director persona. It synthesizes a brief from the
+// C-MAD analysis (Coop Business / Marketing / Art-Craft / Design-UX) and
+// drives gpt-image-1 to produce a 16:9 editorial cover. The output is uploaded
+// to the public `article-covers` bucket and returned as a CDN URL ready for
+// the homepage.
+//
+// Costs: gpt-image-1 medium quality at 1536x1024 is ~$0.04 per image. Only
+// fires when scraped og:image is absent, so cost is bounded by the share of
+// articles that ship without a cover.
+async function ensureCoverImage(params: {
+  scrapedImageUrl: string | null;
+  refined: RefinedStory;
+  slug: string;
+  supabase: ReturnType<typeof createClient>;
+  openaiKey: string;
+  dryRun: boolean;
+}): Promise<string | null> {
+  const { scrapedImageUrl, refined, slug, supabase, openaiKey, dryRun } = params;
+
+  if (scrapedImageUrl && (await isImageReachable(scrapedImageUrl))) {
+    return scrapedImageUrl;
+  }
+
+  if (dryRun) {
+    return scrapedImageUrl ?? null;
+  }
+
+  try {
+    const brief = composeArtDirectionBrief(refined);
+    const generated = await generateCoverWithOpenAI(openaiKey, brief);
+    if (!generated) return scrapedImageUrl ?? null;
+
+    const path = `${slug}-${Date.now()}.png`;
+    const { error: uploadError } = await supabase.storage.from("article-covers").upload(path, generated, {
+      contentType: "image/png",
+      upsert: true,
+      cacheControl: "604800"
+    });
+    if (uploadError) {
+      console.error("cover_upload_failed", uploadError);
+      return scrapedImageUrl ?? null;
+    }
+
+    const { data } = supabase.storage.from("article-covers").getPublicUrl(path);
+    return data?.publicUrl ?? scrapedImageUrl ?? null;
+  } catch (error) {
+    console.error("ensure_cover_failed", error);
+    return scrapedImageUrl ?? null;
+  }
+}
+
+async function isImageReachable(url: string) {
+  try {
+    const response = await fetch(url, { method: "HEAD", redirect: "follow" });
+    if (!response.ok) return false;
+    const contentType = response.headers.get("content-type") ?? "";
+    return contentType.startsWith("image/");
+  } catch {
+    return false;
+  }
+}
+
+// Brief follows the C-MAD matrix: Coop Business sets the subject, Marketing
+// sets the tone, Art/Craft sets the visual language, Design/UX sets the
+// composition. Hard constraints (no text, no logos, palette, ratio) are at
+// the top so the model honours them even when prompt details overflow.
+function composeArtDirectionBrief(refined: RefinedStory) {
+  const cmad = refined.decision_log.cmad;
+  const desk = refined.decision_log.desk;
+
+  const moodByDesk: Record<string, string> = {
+    Capa: "warm, market-savvy, human-centered. Conceptual editorial photography vibe.",
+    CoopTech: "tech-forward, optimistic, slightly futuristic. Clean studio composition or abstract data visual.",
+    "La Fora": "globally aspirational, brand-aware, refined. Modern lifestyle or product still life."
+  };
+
+  return [
+    "Editorial cover image for CoopNews, a Brazilian cooperative-marketing magazine.",
+    "ABSOLUTE CONSTRAINTS: no text, no letters, no typography, no logos, no watermarks, no captions inside the image. The frontend overlays text separately.",
+    "Aspect ratio 16:9, centered subject with breathing room on the edges.",
+    "Color palette: off-white #FAFAF7 paper or deep #0A0A0A ink as the base. Lime accent #C7F542 and coral accent #FF5A36 used sparingly for energy. Avoid muddy or over-saturated colors.",
+    "Style reference: editorial covers from The Atlantic, Bloomberg Businessweek, B9, and Substack.",
+    `Article title: ${refined.title}`,
+    `Editorial summary: ${refined.summary}`,
+    `Visual concept derived from C-MAD analysis:`,
+    `- Subject (Coop Business): ${cmad.coop_business}`,
+    `- Tone (Marketing): ${cmad.marketing}`,
+    `- Craft (Art/Craft): ${cmad.art_craft}`,
+    `- Composition (Design/UX): ${cmad.design_ux}`,
+    `Mood: ${moodByDesk[desk] ?? moodByDesk.Capa}`,
+    "Render as a single bold image, NOT a collage. High contrast. Magazine-cover quality."
+  ].join("\n");
+}
+
+async function generateCoverWithOpenAI(apiKey: string, prompt: string): Promise<Uint8Array | null> {
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-image-1",
+      prompt,
+      size: "1536x1024",
+      quality: "medium",
+      n: 1
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    console.error("image_gen_failed", response.status, text.slice(0, 240));
+    return null;
+  }
+
+  const payload = await response.json();
+  const base64 = payload?.data?.[0]?.b64_json;
+  if (!base64 || typeof base64 !== "string") return null;
+
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 }
 
 // GUIDELINES gate. Three valid editorial paths:
