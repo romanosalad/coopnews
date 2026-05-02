@@ -36,7 +36,7 @@ export function ColunistasSection() {
               Os <em className="em-italic">colunistas</em>
             </h2>
           </div>
-          <a href="#" className="link-arrow">TODOS →</a>
+          <a href="/todos" className="link-arrow">TODOS →</a>
         </div>
         <div className="colunistas-strip">
           {colunistas.map((colunista) => (
