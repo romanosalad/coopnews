@@ -7,7 +7,7 @@ This project keeps the approved editorial layout static by default, then lets Su
 The Supabase Edge Function `ingest-news` can run in two modes:
 
 - Manual URL ingestion: send one article URL and let AI refine it.
-- Discovery ingestion: use Serper.dev search terms, scrape discovered URLs, then let AI decide publish/draft/discard.
+- Discovery ingestion: use Serper.dev search terms across developed-market locales, scrape discovered URLs, translate/rewrite them in Portuguese, then let AI decide publish/draft/discard.
 
 For every accepted article it stores:
 
@@ -95,5 +95,8 @@ curl -X POST "https://YOUR_PROJECT_REF.supabase.co/functions/v1/ingest-news" \
 
 - `publish_threshold` defaults to `0.72`.
 - `dry_run: true` returns the records without inserting them.
+- The default discovery is international: cooperative marketing, advertising, branding, credit unions, mutual banks, building societies and co-op campaigns in markets such as US, UK, Canada, Australia, Germany, France, Netherlands, Sweden and Japan.
+- The refiner rewrites the article in Portuguese with a B9/Mundo do Marketing-style editorial rhythm: fact, context, strategy, impact and analysis. It should not copy long passages from the source.
 - If AI marks the article irrelevant, the function discards it.
 - Real article images come from the scraped article. Local geometric visuals remain fallback placeholders only.
+- The article page always shows the original source link in the "Transparência Editorial" block.

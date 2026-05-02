@@ -1,8 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Content } from "@/lib/types";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const FALLBACK_SUPABASE_URL = "https://vgjbkoxjphgpovtxdvlu.supabase.co";
+const FALLBACK_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnamJrb3hqcGhncG92dHhkdmx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NjMyMzksImV4cCI6MjA5MzIzOTIzOX0.I_jSIPwUnCenvgi-RQWTfstNany_mwFDcwXn7V18Rl4";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
 
 export function hasSupabaseBrowserConfig() {
   return Boolean(supabaseUrl && supabaseAnonKey);

@@ -36,9 +36,9 @@ export async function getPortalHomeArticles(): Promise<PortalHomeArticles> {
 
   return {
     heroFeature: live[0] ?? fallbackHero,
-    heroLeft: fillArticles(live.slice(1, 4), fallbackHeroLeft, 3),
-    heroRight: fillArticles(live.slice(4, 8), fallbackHeroRight, 4),
-    editorias: fillArticles(live, getArticlesBySection("editorias"), 6)
+    heroLeft: live.slice(1, 4),
+    heroRight: live.slice(4, 8),
+    editorias: live.slice(0, 6)
   };
 }
 
@@ -78,7 +78,19 @@ function isStrongCoopArticle(article: CoopArticle) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  return ["cooperativ", "sicredi", "sicoob", "unicred", "unimed", "coletiv"].some((keyword) => text.includes(keyword));
+  return [
+    "cooperativ",
+    "credit union",
+    "mutual",
+    "building society",
+    "co-op",
+    "cooperative bank",
+    "sicredi",
+    "sicoob",
+    "unicred",
+    "unimed",
+    "coletiv"
+  ].some((keyword) => text.includes(keyword));
 }
 
 function isWeakRoundupArticle(article: CoopArticle) {

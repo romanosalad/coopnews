@@ -37,10 +37,33 @@ type RefinedStory = {
 };
 
 const DEFAULT_TERMS = [
-  "campanha publicidade cooperativa",
-  "cooperativa campanha marketing agencia",
-  "marketing cooperativista campanha brasil",
-  "campanha sicredi sicoob unimed publicidade"
+  "\"credit union\" \"brand campaign\" agency",
+  "\"credit union\" \"advertising campaign\" agency",
+  "\"credit union\" \"marketing campaign\" \"members\"",
+  "\"cooperative bank\" \"brand campaign\" agency",
+  "\"co-operative bank\" \"advertising campaign\"",
+  "\"building society\" \"brand campaign\" agency",
+  "\"mutual bank\" \"brand campaign\" agency",
+  "Desjardins brand campaign agency marketing",
+  "Rabobank brand campaign agency cooperative",
+  "\"The Co-operative Bank\" campaign agency",
+  "\"The Co-operative Group\" brand campaign agency",
+  "\"Nationwide Building Society\" brand campaign agency",
+  "\"REI Co-op\" brand campaign marketing",
+  "Migros cooperative brand campaign agency",
+  "Arla cooperative brand campaign marketing"
+];
+
+const DEFAULT_SEARCH_LOCALES = [
+  { gl: "us", hl: "en" },
+  { gl: "gb", hl: "en" },
+  { gl: "ca", hl: "en" },
+  { gl: "au", hl: "en" },
+  { gl: "de", hl: "de" },
+  { gl: "fr", hl: "fr" },
+  { gl: "nl", hl: "nl" },
+  { gl: "se", hl: "sv" },
+  { gl: "jp", hl: "ja" }
 ];
 
 const DEFAULT_MODEL = "gpt-4o-mini";
@@ -70,6 +93,7 @@ Deno.serve(async (request) => {
   const body = await request.json().catch(() => ({}));
   const terms = normalizeTerms(body.terms);
   const limit = clampNumber(body.limit, 1, 10, 3);
+  const maxSearches = clampNumber(body.max_searches, 1, 30, 12);
   const publishThreshold = clampNumber(body.publish_threshold, 0, 1, DEFAULT_PUBLISH_THRESHOLD);
   const dryRun = Boolean(body.dry_run);
 
@@ -77,7 +101,7 @@ Deno.serve(async (request) => {
     auth: { persistSession: false }
   });
 
-  const discovered = await getDiscoveryItems({ body, serperKey, terms, limit });
+  const discovered = await getDiscoveryItems({ body, serperKey, terms, limit, maxSearches });
   const inserted = [];
   const discarded = [];
 
@@ -144,12 +168,14 @@ async function getDiscoveryItems({
   body,
   serperKey,
   terms,
-  limit
+  limit,
+  maxSearches
 }: {
   body: Record<string, unknown>;
   serperKey: string | undefined;
   terms: string[];
   limit: number;
+  maxSearches: number;
 }) {
   if (typeof body.url === "string" && body.url.startsWith("http")) {
     return [{ title: body.url, link: body.url }] satisfies DiscoveryItem[];
@@ -159,25 +185,33 @@ async function getDiscoveryItems({
     throw new Error("Missing SERPER_API_KEY for discovery mode. Send { url } for manual ingestion.");
   }
 
-  return discoverStories(serperKey, terms, limit);
+  return discoverStories(serperKey, terms, limit, maxSearches);
 }
 
-async function discoverStories(apiKey: string, terms: string[], limit: number) {
+async function discoverStories(apiKey: string, terms: string[], limit: number, maxSearches: number) {
   const results: DiscoveryItem[] = [];
+  let searches = 0;
 
   for (const q of terms) {
-    const response = await fetch("https://google.serper.dev/search", {
-      method: "POST",
-      headers: {
-        "X-API-KEY": apiKey,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ q, gl: "br", hl: "pt-br", num: limit })
-    });
+    for (const locale of DEFAULT_SEARCH_LOCALES) {
+      if (searches >= maxSearches) break;
+      searches += 1;
 
-    if (!response.ok) continue;
-    const payload = await response.json();
-    results.push(...(payload.organic ?? []));
+      const response = await fetch("https://google.serper.dev/search", {
+        method: "POST",
+        headers: {
+          "X-API-KEY": apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ q, gl: locale.gl, hl: locale.hl, num: Math.min(limit, 5) })
+      });
+
+      if (!response.ok) continue;
+      const payload = await response.json();
+      results.push(...(payload.organic ?? []));
+    }
+
+    if (searches >= maxSearches) break;
   }
 
   return Array.from(new Map(results.filter((item) => item.link).map((item) => [item.link, item])).values()).slice(0, limit);
@@ -249,19 +283,21 @@ async function refineWithOpenAI(
         {
           role: "system",
           content:
-            "Voce e um editor senior do Coop News, um jornal de marketing, criatividade e tecnologia para o cooperativismo brasileiro. Refine o texto em uma materia editorial e uma Web Story de 5 slides. Foque em insight, estrategia, agencia, tecnologia e impacto. Se o conteudo nao for relevante para marketing, criatividade, tecnologia, comunicacao ou cooperativismo, retorne apenas {\"verdict\":\"discard\"}."
+            "Voce e um editor senior do Coop News, um jornal brasileiro sobre marketing, publicidade, criatividade e tecnologia aplicados ao universo cooperativista global. Sua missao e descobrir casos internacionais e traduzir/reescrever em portugues do Brasil com uma pegada editorial analitica, espirituosa e precisa, proxima do formato de B9 e Mundo do Marketing: abre com o fato, explica o contexto, interpreta a estrategia e aponta por que importa. Nunca copie frases longas da fonte original; transforme, resuma, contextualize e atribua. Publique somente se o texto original falar explicitamente de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group, cooperativa agricola/consumo/plataforma, ou marca cooperativa reconhecivel. Descarte roundups genericos, posts de SEO fracos, conteudos onde cooperativa foi apenas inferida pela IA, e noticias sem relacao com marketing, publicidade, branding, comunicacao, martech, experiencia do associado/cliente ou campanhas. Responda sempre e somente um objeto JSON valido no schema pedido. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
         },
         {
           role: "user",
           content: JSON.stringify({
             expected_schema: {
+              verdict: "publish|draft|discard",
               title: "string",
               slug: "kebab-case string",
-              category: "Criatividade|Martech|IA|Comunicacao do Bem|Automacao|La Fora|Marketing Cooperativista",
-              body_markdown: "4 to 8 short paragraphs in Portuguese",
-              geo_location: "BR-SP, BR-RS etc or null",
-              relevance_score: "0 to 1",
-              publish: `boolean, true only when relevance_score >= ${input.publishThreshold}`,
+              category: "Criatividade|Martech|IA|Comunicacao do Bem|Automacao|La Fora|Marketing Cooperativista|Cooperativismo Global",
+              body_markdown:
+                "6 to 9 short paragraphs in Brazilian Portuguese, rewritten as an original Coop News article: no bullet list, no copied lead, no source link inside the body",
+              geo_location: "US, GB, CA, AU, NZ, DE, FR, NL, SE, JP, BR-SP etc or null",
+              relevance_score: `0 to 1, use >= ${input.publishThreshold} only for complete and clearly relevant articles`,
+              publish: `boolean, true only when verdict is publish and relevance_score >= ${input.publishThreshold}`,
               decision_log: {
                 verdict: "publish|draft|discard",
                 reasons: ["string"],
@@ -294,26 +330,39 @@ async function refineWithOpenAI(
   if (!content) return null;
 
   const parsed = JSON.parse(content);
-  if (parsed.verdict === "discard") return null;
+  const modelVerdict = clean(parsed.verdict || parsed.decision_log?.verdict).toLowerCase();
+  if (modelVerdict === "discard") return null;
 
-  const relevanceScore = Number(parsed.relevance_score ?? 0);
   const title = clean(parsed.title) || input.scraped.title;
+  const bodyMarkdown = clean(parsed.body_markdown);
+  const slides = normalizeSlides(parsed.story_json);
+  const rawScore = Number(parsed.relevance_score ?? parsed.relevanceScore ?? parsed.score);
+  const hasCompleteArticle = bodyMarkdown.length >= 600;
+  const hasCompleteStory = slides.length === 5 && slides.every((slide) => slide.title && slide.body);
+  const inferredScore = hasCompleteArticle && hasCompleteStory ? 0.78 : 0;
+  const relevanceScore = Number.isFinite(rawScore) && rawScore > 0 ? rawScore : inferredScore;
+  const shouldPublish =
+    hasCompleteArticle &&
+    hasCompleteStory &&
+    modelVerdict !== "draft" &&
+    Boolean(parsed.publish !== false) &&
+    relevanceScore >= input.publishThreshold;
 
   return {
     title,
     slug: slugify(parsed.slug || title),
-    body_markdown: clean(parsed.body_markdown),
+    body_markdown: bodyMarkdown,
     category: clean(parsed.category) || "Marketing Cooperativista",
     geo_location: clean(parsed.geo_location) || null,
     relevance_score: Number.isFinite(relevanceScore) ? relevanceScore : 0,
-    publish: Boolean(parsed.publish && relevanceScore >= input.publishThreshold),
+    publish: shouldPublish,
     decision_log: {
-      verdict: parsed.publish && relevanceScore >= input.publishThreshold ? "publish" : "draft",
+      verdict: shouldPublish ? "publish" : "draft",
       reasons: Array.isArray(parsed.decision_log?.reasons) ? parsed.decision_log.reasons.map(String) : [],
       source_terms: input.sourceTerms,
       source_url: input.sourceUrl
     },
-    story_json: normalizeSlides(parsed.story_json)
+    story_json: slides
   };
 }
 
