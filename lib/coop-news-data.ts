@@ -401,6 +401,7 @@ export const coopArticles: CoopArticle[] = [
     author: "Editor Lá Fora",
     readTime: "9 min de leitura",
     placeholder: 3,
+    imageUrl: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=1200&q=80",
     section: "lafora",
     body: [
       "O Duolingo ensina uma lição difícil: personalidade forte não precisa destruir utilidade. A marca brinca, mas o produto continua claro.",
@@ -418,6 +419,7 @@ export const coopArticles: CoopArticle[] = [
     author: "Editor Lá Fora",
     readTime: "5 min de leitura",
     placeholder: 2,
+    imageUrl: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200&q=80",
     section: "lafora",
     body: [
       "Frete grátis é benefício racional, mas o Mercado Livre conseguiu tratá-lo como senha cultural.",
@@ -435,6 +437,7 @@ export const coopArticles: CoopArticle[] = [
     author: "Editor Lá Fora",
     readTime: "6 min de leitura",
     placeholder: 5,
+    imageUrl: "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=1200&q=80",
     section: "lafora",
     body: [
       "O roxo foi ruptura quando o setor financeiro ainda parecia preso a azul, prata e formalidade.",
