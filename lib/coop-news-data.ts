@@ -1,3 +1,5 @@
+import { getEditorialFallbackImage } from "@/lib/editorial-fallbacks";
+
 export type CoopArticle = {
   id?: string;
   slug: string;
@@ -447,6 +449,15 @@ export const coopArticles: CoopArticle[] = [
     ]
   }
 ];
+
+// Backfill missing imageUrl on the static editorial inventory using the
+// curated Unsplash pools. Done once at module load so getArticleBySlug and
+// getArticlesBySection always return covers, never raw placeholders.
+for (const article of coopArticles) {
+  if (!article.imageUrl) {
+    article.imageUrl = getEditorialFallbackImage(article.eyebrowClass, article.slug);
+  }
+}
 
 export function getArticleBySlug(slug: string) {
   return coopArticles.find((article) => article.slug === slug) ?? null;

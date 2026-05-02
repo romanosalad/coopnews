@@ -1,4 +1,5 @@
 import { coopArticles, getArticleBySlug, getArticlesBySection, type ArticleBodyBlock, type CoopArticle } from "@/lib/coop-news-data";
+import { getEditorialFallbackImage } from "@/lib/editorial-fallbacks";
 import { getPopularContentsFromSupabase, getPublishedContentsFromSupabase } from "@/lib/supabase";
 import type { Content } from "@/lib/types";
 
@@ -295,18 +296,20 @@ function contentToArticle(content: Content): CoopArticle {
   const summary = getDecisionLogString(content.decision_log, "summary");
   const avgScrollDepth = content.view_count ? Math.round((content.total_scroll_depth ?? 0) / content.view_count) : 0;
   const dek = buildDek({ summary, body, title: content.title });
+  const eyebrowClass = categoryToEyebrowClass(category);
+  const imageUrl = content.image_url || getEditorialFallbackImage(eyebrowClass, content.slug);
 
   return {
     id: content.id,
     slug: content.slug,
     eyebrow: category.toUpperCase(),
-    eyebrowClass: categoryToEyebrowClass(category),
+    eyebrowClass,
     titleHtml: escapeHtml(content.title),
     dek,
     author: "Redação CoopNews",
     readTime: estimateReadTime(content.body_markdown),
     placeholder: placeholderFromSlug(content.slug),
-    imageUrl: content.image_url,
+    imageUrl,
     sourceUrl: content.source_url,
     bodyMarkdown: content.body_markdown,
     relevanceScore: content.relevance_score,
