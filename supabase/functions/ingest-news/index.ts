@@ -125,6 +125,11 @@ Deno.serve(async (request) => {
         continue;
       }
 
+      if (!hasExplicitCoopOrLaForaSignal(scraped.text, scraped.title)) {
+        discarded.push({ url: item.link, reason: "coop_only_inferred_per_guidelines" });
+        continue;
+      }
+
       const refined = await refineWithOpenAI(openaiKey, model, {
         scraped,
         sourceUrl: item.link,
@@ -295,26 +300,26 @@ async function refineWithOpenAI(
         {
           role: "system",
           content:
-            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing.\n\n=== TITULO ===\nProibido traduzir literalmente o titulo original. Proibido titulo descritivo do tipo \"Empresa X lanca produto Y\". Crie um titulo editorial novo em portugues do Brasil seguindo um destes formatos:\n1. Pergunta provocativa: \"Por que o roxo do Nubank deixou de ser ousadia?\"\n2. Tese forte: \"O fim do tom corporativo no marketing financeiro\"\n3. Contraste: \"Mais marca, menos folder: como X virou referencia\"\n4. Numero + insight: \"Em 90 dias, tres agencias provaram que cooperativismo vende.\"\n5. Verbo de acao + tensao: \"A coruja do Duolingo matou o tom institucional\"\nEvite gerundio. Evite voz passiva. Maximo 75 caracteres. Cite marca quando relevante, mas nunca apenas como sujeito de verbo banal.\n\n=== PRE-RESUMO (campo summary) ===\nObrigatorio. Maximo 160 caracteres. Nunca copie nem parafraseie a primeira frase do artigo (body_markdown). Deve antecipar A TENSAO ou A LICAO da materia em uma sentenca editorial autonoma, ja capaz de existir sem o resto do texto. Ex: \"Cor chama atencao no comeco. Sistema, voz e experiencia sustentam diferenciacao depois.\"\n\n=== CORPO ===\nReescreva em portugues do Brasil. Nao copie frases longas da fonte. Estrutura: fato -> contexto -> estrategia -> C-MAD -> impacto. Use H2 a cada ~300 palavras em artigos longos. 6 a 9 paragrafos curtos. Sem bullet list inline.\n\n=== C-MAD (obrigatorio) ===\nCoop Business, Marketing, Art/Craft, Design/UX. Cada campo deve ser uma sentenca substantiva, nao etiqueta.\n\n=== PUBLICACAO ===\nPublique se a fonte falar explicitamente de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Para La Fora, aceite tambem B Corp, ESG, impacto social, comunidade ou marketing do bem com aprendizado claro para cooperativas. Descarte roundups genericos, SEO fraco e textos onde cooperativismo foi inferido sem utilidade estrategica.\n\n=== CADERNOS ===\nCapa: campanhas e movimentos de marketing. CoopTech: IA, automacao e martech. La Fora: B Corp/ESG/marketing do bem inspirador. Vozes: opiniao humana. Forum: ranking/comunidade.\n\n=== RESPOSTA ===\nSomente JSON valido no schema. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
+            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing.\n\n=== MANTRA ===\nValor concreto acima de tudo. Cada paragrafo precisa entregar fato, leitura ou consequencia pratica. Frases vagas, autoelogio institucional e jargao sem prova sao motivo de rebaixar relevance_score.\n\n=== TITULO ===\nProibido traduzir literalmente o titulo original. Proibido titulo descritivo do tipo \"Empresa X lanca produto Y\". Crie um titulo editorial novo em portugues do Brasil seguindo um destes formatos:\n1. Pergunta provocativa: \"Por que o roxo do Nubank deixou de ser ousadia?\"\n2. Tese forte: \"O fim do tom corporativo no marketing financeiro\"\n3. Contraste: \"Mais marca, menos folder: como X virou referencia\"\n4. Numero + insight: \"Em 90 dias, tres agencias provaram que cooperativismo vende.\"\n5. Verbo de acao + tensao: \"A coruja do Duolingo matou o tom institucional\"\nEvite gerundio. Evite voz passiva. MAXIMO 75 caracteres (hard limit). Cite marca quando relevante, mas nunca apenas como sujeito de verbo banal.\n\n=== PRE-RESUMO (campo summary) ===\nObrigatorio. MAXIMO 160 caracteres (hard limit). Nunca copie nem parafraseie a primeira frase do artigo (body_markdown). Deve antecipar A TENSAO ou A LICAO da materia em uma sentenca editorial autonoma, ja capaz de existir sem o resto do texto.\n\n=== CORPO (body_markdown) ===\nReescreva em portugues do Brasil. Nao copie frases longas da fonte. Estrutura: fato -> contexto -> estrategia -> C-MAD -> impacto. OBRIGATORIO: para artigos com mais de 600 palavras, insira pelo menos 2 H2 (## Titulo) que dividam a leitura em secoes escannerizaveis. H2 deve ser frase curta editorial (max 60 chars), nao etiqueta. Pode usar > para uma frase de destaque (no maximo uma por artigo). 6 a 9 paragrafos. Sem bullet list inline. Cada paragrafo no maximo 4 frases.\n\n=== C-MAD (obrigatorio) ===\nCoop Business, Marketing, Art/Craft, Design/UX. Cada campo deve ser uma sentenca substantiva com verbo, sujeito e consequencia. Etiquetas vagas como \"branding forte\" sao banidas.\n\n=== PUBLICACAO ===\nPublique se a fonte falar EXPLICITAMENTE de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Para La Fora, aceite B Corp, ESG, impacto social, marketing do bem com aprendizado claro para cooperativas. Cooperativismo apenas inferido = descarte. Roundups, SEO generico e \"5 dicas para X\" = descarte.\n\n=== CADERNOS DISPONIVEIS PARA AI ===\nApenas tres: Capa (campanhas e movimentos de marketing), CoopTech (IA, automacao, martech, dados aplicados), La Fora (B Corp/ESG/marcas-icone que ensinam algo a cooperativas). Vozes e Forum sao reservados para conteudo humano e nao podem ser escolhidos pela IA. Se a materia nao se encaixar nos tres validos, marque verdict=discard.\n\n=== RESPOSTA ===\nSomente JSON valido no schema. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
         },
         {
           role: "user",
           content: JSON.stringify({
             expected_schema: {
               verdict: "publish|draft|discard",
-              title: "EDITORIAL Brazilian Portuguese title, max 75 chars. MUST follow one of the formats: question, thesis, contrast, number+insight, action+tension. NEVER literal translation. NEVER 'Brand X launches Y' style.",
+              title: "EDITORIAL Brazilian Portuguese title, HARD LIMIT 75 chars. MUST follow one of the formats: question, thesis, contrast, number+insight, action+tension. NEVER literal translation. NEVER 'Brand X launches Y' style.",
               slug: "kebab-case string",
-              summary: "pre-summary for feed, max 160 characters, MUST anticipate tension or lesson, MUST be a standalone editorial sentence, MUST NOT copy or paraphrase the first sentence of body_markdown",
+              summary: "pre-summary for feed, HARD LIMIT 160 chars, MUST anticipate tension or lesson, MUST be a standalone editorial sentence, MUST NOT copy or paraphrase the first sentence of body_markdown",
               category: "Criatividade|Martech|IA|Comunicacao do Bem|Automacao|La Fora|Marketing Cooperativista|Cooperativismo Global",
               body_markdown:
-                "6 to 9 short paragraphs in Brazilian Portuguese, rewritten as an original Coop News article: no bullet list, no copied lead, no source link inside the body",
+                "6 to 9 short paragraphs in Brazilian Portuguese, rewritten as an original Coop News article. MUST include >=2 H2 sections (## Section title) for any article >600 words. NO bullet lists. NO copied lead. NO source link inside body. Max 4 sentences per paragraph.",
               geo_location: "US, GB, CA, AU, NZ, DE, FR, NL, SE, JP, BR-SP etc or null",
               relevance_score: `0 to 1, use >= ${input.publishThreshold} only for complete and clearly relevant articles`,
               publish: `boolean, true only when verdict is publish and relevance_score >= ${input.publishThreshold}`,
               decision_log: {
                 verdict: "publish|draft|discard",
                 reasons: ["string"],
-                desk: "Capa|CoopTech|La Fora|Vozes|Forum",
+                desk: "Capa|CoopTech|La Fora",
                 cmad: {
                   coop_business: "string",
                   marketing: "string",
@@ -353,9 +358,9 @@ async function refineWithOpenAI(
   const modelVerdict = clean(parsed.verdict || parsed.decision_log?.verdict).toLowerCase();
   if (modelVerdict === "discard") return null;
 
-  const title = clean(parsed.title) || input.scraped.title;
+  const title = enforceTitleLimit(clean(parsed.title) || input.scraped.title);
   const bodyMarkdown = clean(parsed.body_markdown);
-  const rawSummary = clean(parsed.summary).slice(0, 180);
+  const rawSummary = enforceSummaryLimit(clean(parsed.summary));
   const firstParagraph = bodyMarkdown.split(/\n{2,}/)[0]?.trim() ?? "";
   const summary = isSummaryDuplicateOfBody(rawSummary, firstParagraph) ? "" : rawSummary;
   const slides = normalizeSlides(parsed.story_json);
@@ -401,12 +406,14 @@ function normalizeCmad(value: unknown) {
   };
 }
 
+// Per GUIDELINES: Vozes is human opinion only, Forum is community ranking.
+// AI ingestion must never publish into either; remap to the closest editorial
+// desk so the editorial identity stays intact.
 function normalizeDesk(value: unknown, category: unknown): RefinedStory["decision_log"]["desk"] {
   const normalized = clean(value || category).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (normalized.includes("tech") || normalized.includes("martech") || normalized.includes("ia") || normalized.includes("automacao")) return "CoopTech";
   if (normalized.includes("fora") || normalized.includes("esg") || normalized.includes("b corp") || normalized.includes("bem")) return "La Fora";
-  if (normalized.includes("vozes") || normalized.includes("opiniao")) return "Vozes";
-  if (normalized.includes("forum") || normalized.includes("ranking")) return "Forum";
+  if (normalized.includes("vozes") || normalized.includes("opiniao") || normalized.includes("forum") || normalized.includes("ranking")) return "Capa";
   return "Capa";
 }
 
@@ -433,6 +440,58 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
 
 function clean(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+// GUIDELINES: publish only when the source explicitly mentions a cooperative,
+// co-op, credit union, mutual, building society or recognizable cooperative
+// brand. La Fora may also accept B Corp / ESG / purpose-driven. Articles where
+// cooperativismo is only inferred must be discarded. This pre-filter saves the
+// OpenAI call for clearly disqualified content.
+function hasExplicitCoopOrLaForaSignal(text: string, title: string) {
+  const haystack = `${title} ${text}`
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+
+  const coopKeywords = [
+    "cooperativ",
+    "co-operative",
+    "cooperative",
+    "co-op",
+    "credit union",
+    "mutual bank",
+    "mutual society",
+    "building society",
+    "sicredi",
+    "sicoob",
+    "unicred",
+    "unimed",
+    "rabobank",
+    "desjardins",
+    "nationwide",
+    "rei co-op",
+    "the co-operative",
+    "migros",
+    "arla"
+  ];
+
+  const laForaKeywords = ["b corp", "b-corp", "esg", "purpose driven", "purpose-driven", "social impact"];
+
+  return [...coopKeywords, ...laForaKeywords].some((keyword) => haystack.includes(keyword));
+}
+
+// GUIDELINES: cover titles <= 75 chars. Trim at last whitespace, append no
+// ellipsis (titles must read as headlines, not truncations).
+function enforceTitleLimit(value: string) {
+  if (value.length <= 75) return value;
+  const trimmed = value.slice(0, 75).replace(/\s+\S*$/, "").trim();
+  return trimmed.length >= 30 ? trimmed : value.slice(0, 75);
+}
+
+// GUIDELINES: feed lead <= 160 chars.
+function enforceSummaryLimit(value: string) {
+  if (value.length <= 160) return value;
+  return `${value.slice(0, 157).replace(/\s+\S*$/, "")}...`;
 }
 
 function isSummaryDuplicateOfBody(summary: string, firstParagraph: string) {
