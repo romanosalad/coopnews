@@ -24,8 +24,8 @@ export default async function HomePage() {
       <TopBar />
       <Hero feature={articles.heroFeature} leftArticles={articles.heroLeft} rightArticles={articles.heroRight} />
       <ColunistasSection />
-      <EditoriasSection articles={articles.coopTech} />
       <PopularSection articles={articles.popular} />
+      <EditoriasSection articles={articles.coopTech} />
       <LaForaSection articles={articles.laFora} />
       <CtaBand />
       <Footer />
