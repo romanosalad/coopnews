@@ -63,7 +63,20 @@ const DEFAULT_TERMS = [
   "Arla cooperative brand campaign marketing",
   "\"B Corp\" \"brand campaign\" agency social impact",
   "\"ESG\" \"marketing campaign\" brand agency community",
-  "\"purpose driven\" \"brand campaign\" cooperative inspiration"
+  "\"purpose driven\" \"brand campaign\" cooperative inspiration",
+  // CoopTech feed: tech / AI / automation that the editor will reframe with a
+  // cooperative angle. These articles do not need to mention coops upfront.
+  "\"AI agent\" marketing 2026 case",
+  "\"agentic AI\" marketing automation",
+  "\"AGI\" marketing brand strategy",
+  "GPT marketing automation case study",
+  "\"marketing automation\" AI 2026 case",
+  "\"customer data platform\" AI 2026",
+  "\"martech\" \"AI\" \"customer journey\" 2026",
+  "\"low-code\" marketing operations 2026",
+  "Salesforce Einstein marketing case 2026",
+  "HubSpot AI marketing case 2026",
+  "Adobe Sensei marketing case 2026"
 ];
 
 const DEFAULT_SEARCH_LOCALES = [
@@ -300,7 +313,7 @@ async function refineWithOpenAI(
         {
           role: "system",
           content:
-            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing.\n\n=== MANTRA ===\nValor concreto acima de tudo. Cada paragrafo precisa entregar fato, leitura ou consequencia pratica. Frases vagas, autoelogio institucional e jargao sem prova sao motivo de rebaixar relevance_score.\n\n=== TITULO ===\nProibido traduzir literalmente o titulo original. Proibido titulo descritivo do tipo \"Empresa X lanca produto Y\". Crie um titulo editorial novo em portugues do Brasil seguindo um destes formatos:\n1. Pergunta provocativa: \"Por que o roxo do Nubank deixou de ser ousadia?\"\n2. Tese forte: \"O fim do tom corporativo no marketing financeiro\"\n3. Contraste: \"Mais marca, menos folder: como X virou referencia\"\n4. Numero + insight: \"Em 90 dias, tres agencias provaram que cooperativismo vende.\"\n5. Verbo de acao + tensao: \"A coruja do Duolingo matou o tom institucional\"\nEvite gerundio. Evite voz passiva. MAXIMO 75 caracteres (hard limit). Cite marca quando relevante, mas nunca apenas como sujeito de verbo banal.\n\n=== PRE-RESUMO (campo summary) ===\nObrigatorio. MAXIMO 160 caracteres (hard limit). Nunca copie nem parafraseie a primeira frase do artigo (body_markdown). Deve antecipar A TENSAO ou A LICAO da materia em uma sentenca editorial autonoma, ja capaz de existir sem o resto do texto.\n\n=== CORPO (body_markdown) ===\nReescreva em portugues do Brasil. Nao copie frases longas da fonte. Estrutura: fato -> contexto -> estrategia -> C-MAD -> impacto. OBRIGATORIO: para artigos com mais de 600 palavras, insira pelo menos 2 H2 (## Titulo) que dividam a leitura em secoes escannerizaveis. H2 deve ser frase curta editorial (max 60 chars), nao etiqueta. Pode usar > para uma frase de destaque (no maximo uma por artigo). 6 a 9 paragrafos. Sem bullet list inline. Cada paragrafo no maximo 4 frases.\n\n=== C-MAD (obrigatorio) ===\nCoop Business, Marketing, Art/Craft, Design/UX. Cada campo deve ser uma sentenca substantiva com verbo, sujeito e consequencia. Etiquetas vagas como \"branding forte\" sao banidas.\n\n=== PUBLICACAO ===\nPublique se a fonte falar EXPLICITAMENTE de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Para La Fora, aceite B Corp, ESG, impacto social, marketing do bem com aprendizado claro para cooperativas. Cooperativismo apenas inferido = descarte. Roundups, SEO generico e \"5 dicas para X\" = descarte.\n\n=== CADERNOS DISPONIVEIS PARA AI ===\nApenas tres: Capa (campanhas e movimentos de marketing), CoopTech (IA, automacao, martech, dados aplicados), La Fora (B Corp/ESG/marcas-icone que ensinam algo a cooperativas). Vozes e Forum sao reservados para conteudo humano e nao podem ser escolhidos pela IA. Se a materia nao se encaixar nos tres validos, marque verdict=discard.\n\n=== RESPOSTA ===\nSomente JSON valido no schema. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
+            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing.\n\n=== MANTRA ===\nValor concreto acima de tudo. Cada paragrafo precisa entregar fato, leitura ou consequencia pratica. Frases vagas, autoelogio institucional e jargao sem prova sao motivo de rebaixar relevance_score.\n\n=== TITULO ===\nProibido traduzir literalmente o titulo original. Proibido titulo descritivo do tipo \"Empresa X lanca produto Y\". Crie um titulo editorial novo em portugues do Brasil seguindo um destes formatos:\n1. Pergunta provocativa: \"Por que o roxo do Nubank deixou de ser ousadia?\"\n2. Tese forte: \"O fim do tom corporativo no marketing financeiro\"\n3. Contraste: \"Mais marca, menos folder: como X virou referencia\"\n4. Numero + insight: \"Em 90 dias, tres agencias provaram que cooperativismo vende.\"\n5. Verbo de acao + tensao: \"A coruja do Duolingo matou o tom institucional\"\nEvite gerundio. Evite voz passiva. MAXIMO 75 caracteres (hard limit). Cite marca quando relevante, mas nunca apenas como sujeito de verbo banal.\n\n=== PRE-RESUMO (campo summary) ===\nObrigatorio. MAXIMO 160 caracteres (hard limit). Nunca copie nem parafraseie a primeira frase do artigo (body_markdown). Deve antecipar A TENSAO ou A LICAO da materia em uma sentenca editorial autonoma, ja capaz de existir sem o resto do texto.\n\n=== CORPO (body_markdown) ===\nReescreva em portugues do Brasil. Nao copie frases longas da fonte. Estrutura: fato -> contexto -> estrategia -> C-MAD -> impacto. OBRIGATORIO: para artigos com mais de 600 palavras, insira pelo menos 2 H2 (## Titulo) que dividam a leitura em secoes escannerizaveis. H2 deve ser frase curta editorial (max 60 chars), nao etiqueta. Pode usar > para uma frase de destaque (no maximo uma por artigo). 6 a 9 paragrafos. Sem bullet list inline. Cada paragrafo no maximo 4 frases.\n\n=== C-MAD (obrigatorio) ===\nCoop Business, Marketing, Art/Craft, Design/UX. Cada campo deve ser uma sentenca substantiva com verbo, sujeito e consequencia. Etiquetas vagas como \"branding forte\" sao banidas.\n\n=== TRES CAMINHOS DE PUBLICACAO ===\n1. CAPA: a fonte fala EXPLICITAMENTE de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Reescreva como case editorial com leitura estrategica.\n2. LA FORA: a fonte fala de B Corp, ESG, marca de proposito, impacto social ou caso-icone (Duolingo, Patagonia, Mercado Livre, Ben & Jerry's etc). Reescreva extraindo o aprendizado para cooperativas.\n3. COOPTECH: a fonte fala de IA, AGI, agentic AI, GPT/LLM, automacao, martech, CDP, low-code, RPA ou plataforma de dados aplicada a marketing. NAO precisa mencionar cooperativas; voce DEVE adicionar ao final do artigo uma secao H2 \"## O que isso significa para o coop\" com 1-2 paragrafos especificos sobre como uma cooperativa de credito, agro, saude ou consumo brasileira pode aplicar a tecnologia descrita. Sem essa secao, a materia nao publica.\n\nQualquer materia fora dessas tres rotas = verdict=discard. Cooperativismo apenas inferido sem nenhum sinal acima = descarte. Roundups, SEO generico e \"5 dicas para X\" = descarte.\n\n=== CADERNOS DISPONIVEIS PARA AI ===\nApenas tres: Capa, CoopTech, La Fora. Vozes e Forum sao reservados para conteudo humano e nao podem ser escolhidos pela IA.\n\n=== RESPOSTA ===\nSomente JSON valido no schema. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
         },
         {
           role: "user",
@@ -442,11 +455,14 @@ function clean(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }
 
-// GUIDELINES: publish only when the source explicitly mentions a cooperative,
-// co-op, credit union, mutual, building society or recognizable cooperative
-// brand. La Fora may also accept B Corp / ESG / purpose-driven. Articles where
-// cooperativismo is only inferred must be discarded. This pre-filter saves the
-// OpenAI call for clearly disqualified content.
+// GUIDELINES gate. Three valid editorial paths:
+// 1. Coop signal -> publish as Capa or whichever desk fits.
+// 2. La Fora signal (B Corp / ESG / purpose-driven) -> publish to La Fora.
+// 3. CoopTech signal (AI, AGI, automation, martech, GPT, agents, dados
+//    aplicados) -> publish to CoopTech AS COMPLEMENTARY READ for the coop
+//    audience; the AI must add the cooperative angle in the rewrite.
+// Articles with none of these signals are discarded before spending OpenAI
+// tokens.
 function hasExplicitCoopOrLaForaSignal(text: string, title: string) {
   const haystack = `${title} ${text}`
     .normalize("NFD")
@@ -477,7 +493,40 @@ function hasExplicitCoopOrLaForaSignal(text: string, title: string) {
 
   const laForaKeywords = ["b corp", "b-corp", "esg", "purpose driven", "purpose-driven", "social impact"];
 
-  return [...coopKeywords, ...laForaKeywords].some((keyword) => haystack.includes(keyword));
+  const coopTechKeywords = [
+    "artificial intelligence",
+    "inteligencia artificial",
+    " ai ",
+    " ia ",
+    " agi ",
+    "agentic",
+    "ai agent",
+    "agente de ia",
+    "llm",
+    "gpt",
+    "openai",
+    "anthropic",
+    "claude",
+    "gemini",
+    "copilot",
+    "machine learning",
+    "deep learning",
+    "automation",
+    "automacao",
+    "marketing automation",
+    "martech",
+    "ad tech",
+    "crm platform",
+    "customer data platform",
+    "no-code",
+    "low-code",
+    "rpa",
+    "saas",
+    "data platform",
+    "data pipeline"
+  ];
+
+  return [...coopKeywords, ...laForaKeywords, ...coopTechKeywords].some((keyword) => haystack.includes(keyword));
 }
 
 // GUIDELINES: cover titles <= 75 chars. Trim at last whitespace, append no
