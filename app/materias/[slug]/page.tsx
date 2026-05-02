@@ -5,7 +5,10 @@ import { BrandCornerMotif } from "@/components/brand/BrandCornerMotif";
 import { CoopWordmark } from "@/components/brand/Wordmark";
 import { Footer } from "@/components/layout/Footer";
 import { TopBar } from "@/components/layout/TopBar";
+import { ArticleTldr } from "@/components/ui/ArticleTldr";
 import { ArticleVisual } from "@/components/ui/ArticleVisual";
+import { CadrinhoBadge, inferCaderno } from "@/components/ui/CadrinhoBadge";
+import { FocusModeToggle } from "@/components/ui/FocusModeToggle";
 import { coopArticles, type ArticleBodyBlock, type CoopArticle } from "@/lib/coop-news-data";
 import { getPortalArticleBySlug } from "@/lib/portal-articles";
 
@@ -37,7 +40,6 @@ export default async function MateriaPage({ params }: Props) {
 
   const related = coopArticles.filter((item) => item.slug !== article.slug && item.section === article.section).slice(0, 3);
   const layoutSeed = computeLayoutSeed(article);
-  const keyTakeaways = buildKeyTakeaways(article);
   const numberedMilestones = buildNumberedMilestones(article);
   const bodyBlocks: ArticleBodyBlock[] = article.bodyBlocks ?? article.body.map((text) => ({ type: "paragraph", text }));
   const paragraphCount = bodyBlocks.filter((block) => block.type === "paragraph").length;
@@ -54,8 +56,16 @@ export default async function MateriaPage({ params }: Props) {
       <article className="article-page">
         <header className="article-hero">
           <div className="article-hero-text">
-            <Link href="/" className="article-back">← VOLTAR PARA HOME</Link>
+            <div className="article-hero-controls">
+              <Link href="/" className="article-back">← VOLTAR PARA HOME</Link>
+              <FocusModeToggle />
+            </div>
             <span className={`eyebrow ${article.eyebrowClass}`}>{article.eyebrow}</span>
+            <CadrinhoBadge
+              caderno={inferCaderno(article.bodyMarkdown ?? "", article.eyebrow)}
+              readTime={article.readTime}
+              className="article-caderno-badge"
+            />
             <h1 dangerouslySetInnerHTML={{ __html: article.titleHtml }} />
             <p className="article-dek">{article.dek}</p>
             <div className="article-meta">
@@ -70,16 +80,7 @@ export default async function MateriaPage({ params }: Props) {
 
         <div className="article-body-wrap">
           <div className="article-body">
-            {keyTakeaways.length >= 2 ? (
-              <aside className="article-tldr">
-                <span className="article-tldr-label">EM RESUMO</span>
-                <ul>
-                  {keyTakeaways.map((point, index) => (
-                    <li key={index}>{point}</li>
-                  ))}
-                </ul>
-              </aside>
-            ) : null}
+            <ArticleTldr tldr={article.tldr} />
 
             {(() => {
               let paragraphIndex = -1;
@@ -300,19 +301,6 @@ function pickPullQuote(article: CoopArticle) {
   const craft = getCmadValue(article, "art_craft");
   if (craft) return craft;
   return article.dek;
-}
-
-function buildKeyTakeaways(article: CoopArticle): string[] {
-  const slides = article.storyJson ?? [];
-  const points = slides.map((slide) => slide.title).filter(Boolean).slice(0, 3);
-  if (points.length >= 2) return points;
-
-  const reasons = article.decisionLog?.reasons;
-  if (Array.isArray(reasons) && reasons.length >= 2) {
-    return reasons.map(String).slice(0, 3);
-  }
-
-  return [];
 }
 
 function buildNumberedMilestones(article: CoopArticle) {

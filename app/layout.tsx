@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Space_Grotesk, Space_Mono } from "next/font/google";
+import { Fraunces, Inter, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -24,14 +24,32 @@ const spaceMono = Space_Mono({
   variable: "--font-space-mono"
 });
 
+// Inter — fonte de leitura para o Modo Foco (alta legibilidade, neutra,
+// excelente para sessões longas e leitores neurodivergentes). Peso regular
+// + medium para corpo. Carregada apenas em Latin para manter footprint baixo.
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  variable: "--font-inter"
+});
+
 export const metadata: Metadata = {
   title: "Coop News - O jornal de marketing cooperativista",
   description: "Marketing, criatividade e tecnologia para o mundo cooperativista brasileiro."
 };
 
+// Inline antes da hidratação: aplica .focus-mode no <html> se a preferência
+// já estava em localStorage. Evita flash de tema "normal" para quem volta ao
+// portal com o Modo Foco ativo.
+const focusModeBootstrap = `(function(){try{if(localStorage.getItem('briefing-focus-mode')==='1'){document.documentElement.classList.add('focus-mode');}}catch(_){}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${fraunces.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`}>
+    <html lang="pt-BR" className={`${fraunces.variable} ${spaceGrotesk.variable} ${spaceMono.variable} ${inter.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: focusModeBootstrap }} />
+      </head>
       <body>{children}</body>
     </html>
   );
