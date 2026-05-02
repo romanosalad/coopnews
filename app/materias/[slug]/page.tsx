@@ -10,6 +10,7 @@ import { ArticleVisual } from "@/components/ui/ArticleVisual";
 import { CadrinhoBadge, inferCaderno } from "@/components/ui/CadrinhoBadge";
 import { DecidorGate } from "@/components/ui/DecidorGate";
 import { FocusModeToggle } from "@/components/ui/FocusModeToggle";
+import { ShareBar } from "@/components/ui/ShareBar";
 import { coopArticles, type ArticleBodyBlock, type CoopArticle } from "@/lib/coop-news-data";
 import { isDecisor } from "@/lib/decisor-actions";
 import { getPortalArticleBySlug } from "@/lib/portal-articles";
@@ -114,6 +115,10 @@ export default async function MateriaPage({ params }: Props) {
             })()}
 
             {requiresGate ? <DecidorGate sourceSlug={article.slug} sourceCaderno="PROTOCOLO" /> : null}
+
+            {!requiresGate ? (
+              <ShareBar title={stripHtml(article.titleHtml)} slug={article.slug} />
+            ) : null}
 
             {!requiresGate && (article.sourceUrl || article.isAiGenerated) ? (
               <div className="article-source-box">
