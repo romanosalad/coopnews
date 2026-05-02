@@ -64,8 +64,13 @@ export async function getPortalHomeArticles(): Promise<PortalHomeArticles> {
   const heroLeft = fillArticles(heroLeftLive, fallbackHeroLeft, 3, claimed);
   const heroRight = fillArticles(heroRightLive, fallbackHeroRight, 4, claimed);
 
-  const coopTechPool = filterByCoopTech(remaining());
-  const coopTech = takeAndClaim(coopTechPool, 6, claimed);
+  // CoopTech graceful fallback chain: strict desk -> broad signal -> static.
+  // The strict filter alone leaves the section empty until enough AI-tagged
+  // CoopTech articles exist; broad keyword scan rescues legacy inventory; the
+  // static editorial fallback guarantees the section never renders blank.
+  const coopTechStrict = filterByCoopTech(remaining());
+  const coopTechBroad = coopTechStrict.length >= 3 ? coopTechStrict : filterByCoopTechBroad(remaining());
+  const coopTech = fillArticles(takeAndClaim(coopTechBroad, 6, claimed), getArticlesBySection("editorias"), 6, claimed);
 
   const popularPool = popularLive.filter((article) => !claimed.has(article.slug));
   const popularFiltered = popularPool.length > 0 ? popularPool : remaining();
@@ -162,6 +167,42 @@ function filterByCoopTech(articles: CoopArticle[]) {
       "openai",
       "anthropic"
     ].some((keyword) => sourceText.includes(keyword));
+  });
+}
+
+// Broader CoopTech rescue: kicks in when the strict filter returns < 3 items.
+// Scans the rewritten title and body markdown for tech-adjacent vocabulary
+// (IA, GPT, automacao, dados, CRM, martech, plataforma, software, SaaS,
+// algoritmo) so legacy AI ingestions tagged as "Capa" but actually about
+// technology still surface in the desk.
+function filterByCoopTechBroad(articles: CoopArticle[]) {
+  return articles.filter((article) => {
+    const text = normalizeText(`${stripHtml(article.titleHtml)} ${article.dek} ${article.bodyMarkdown ?? ""} ${article.eyebrow}`);
+    return [
+      " ia ",
+      " ia,",
+      " ia.",
+      "inteligencia artificial",
+      "gpt",
+      "llm",
+      "machine learning",
+      "automacao",
+      "automatiz",
+      "martech",
+      "crm",
+      "cdp",
+      "dados",
+      "data ",
+      "algoritm",
+      "plataforma",
+      "software",
+      "saas",
+      "api ",
+      "low-code",
+      "no-code",
+      "chatbot",
+      "agentic"
+    ].some((keyword) => text.includes(keyword));
   });
 }
 
