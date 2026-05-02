@@ -25,6 +25,7 @@ export type CoopArticle = {
   completionRate?: number;
   isAiGenerated?: boolean;
   storyJson?: { kicker: string; title: string; body: string }[];
+  tldr?: string | null;
   section: "hero" | "agora" | "popular" | "editorias" | "lafora";
   body: string[];
   bodyBlocks?: ArticleBodyBlock[];

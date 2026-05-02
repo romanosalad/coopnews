@@ -20,6 +20,7 @@ export type Content = {
   category: string;
   relevance_score: number;
   decision_log: Record<string, unknown>;
+  tldr?: string | null;
   view_count?: number;
   click_count?: number;
   total_engaged_seconds?: number;

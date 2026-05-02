@@ -325,6 +325,7 @@ function contentToArticle(content: Content): CoopArticle {
       ? Math.min(100, Math.round(((content.completed_read_count ?? 0) / content.view_count) * 100))
       : 0,
     isAiGenerated: true,
+    tldr: content.tldr ?? null,
     storyJson: Array.isArray(content.story_json)
       ? content.story_json.map((slide) => ({
           kicker: String(slide?.kicker ?? ""),
