@@ -126,6 +126,24 @@ Deno.serve(async (request) => {
     auth: { persistSession: false }
   });
 
+  // REPROCESS MODE
+  // Triggered by { reprocess: "slug" | "all", reprocess_limit?: number }.
+  // Pulls existing articles from `contents`, re-runs the AI rewrite against
+  // their stored source_url with the current prompt, then UPDATEs the row in
+  // place. Lets the team retroactively migrate older articles to the new
+  // editorial voice without losing the slug, engagement metrics or covers.
+  if (body.reprocess) {
+    return await handleReprocess({
+      supabase,
+      openaiKey,
+      model,
+      reprocessSelector: body.reprocess,
+      reprocessLimit: clampNumber(body.reprocess_limit, 1, 100, 25),
+      publishThreshold,
+      dryRun
+    });
+  }
+
   const discovered = await getDiscoveryItems({ body, serperKey, terms, limit, maxSearches });
   const inserted = [];
   const discarded = [];
@@ -205,6 +223,117 @@ Deno.serve(async (request) => {
 
   return json({ inserted, discarded, dry_run: dryRun });
 });
+
+async function handleReprocess(params: {
+  supabase: ReturnType<typeof createClient>;
+  openaiKey: string;
+  model: string;
+  reprocessSelector: unknown;
+  reprocessLimit: number;
+  publishThreshold: number;
+  dryRun: boolean;
+}) {
+  const { supabase, openaiKey, model, reprocessSelector, reprocessLimit, publishThreshold, dryRun } = params;
+
+  let query = supabase
+    .from("contents")
+    .select("id, slug, source_url, image_url, status, published_at")
+    .order("created_at", { ascending: false });
+
+  if (typeof reprocessSelector === "string" && reprocessSelector !== "all") {
+    query = query.eq("slug", reprocessSelector);
+  } else {
+    query = query.limit(reprocessLimit);
+  }
+
+  const { data: targets, error: fetchError } = await query;
+  if (fetchError) {
+    return json({ error: fetchError.message }, 500);
+  }
+  if (!targets || targets.length === 0) {
+    return json({ reprocessed: [], skipped: [], reason: "no_matching_articles" });
+  }
+
+  const reprocessed = [];
+  const skipped = [];
+
+  for (const target of targets as Array<{
+    id: string;
+    slug: string;
+    source_url: string | null;
+    image_url: string | null;
+    status: string;
+    published_at: string | null;
+  }>) {
+    if (!target.source_url) {
+      skipped.push({ slug: target.slug, reason: "no_source_url" });
+      continue;
+    }
+
+    try {
+      const scraped = await scrapeArticle(target.source_url);
+      if (!scraped.text || scraped.text.length < 500) {
+        skipped.push({ slug: target.slug, reason: "scrape_too_short" });
+        continue;
+      }
+
+      const refined = await refineWithOpenAI(openaiKey, model, {
+        scraped,
+        sourceUrl: target.source_url,
+        sourceTerms: ["reprocess"],
+        publishThreshold
+      });
+
+      if (!refined || refined.decision_log.verdict === "discard") {
+        skipped.push({ slug: target.slug, reason: "ai_marked_irrelevant_on_reprocess" });
+        continue;
+      }
+
+      // Reuse existing cover when present; only call the C-MAD agent if the
+      // current image is missing or unreachable. Avoids burning gpt-image-1
+      // quota on articles that already have a good visual.
+      const coverImageUrl = await ensureCoverImage({
+        scrapedImageUrl: target.image_url || scraped.imageUrl,
+        refined,
+        slug: target.slug,
+        supabase,
+        openaiKey,
+        dryRun
+      });
+
+      const update = {
+        title: refined.title,
+        body_markdown: refined.body_markdown,
+        story_json: refined.story_json,
+        image_url: coverImageUrl,
+        category: refined.category || "Marketing Cooperativista",
+        relevance_score: refined.relevance_score,
+        decision_log: refined.decision_log,
+        // Preserve original publish state on reprocess; do not silently
+        // unpublish a piece the team already approved. Only the body, title,
+        // C-MAD and cover get refreshed.
+        status: target.status,
+        published_at: target.published_at
+      };
+
+      if (dryRun) {
+        reprocessed.push({ slug: target.slug, dry_run: true, new_title: refined.title });
+        continue;
+      }
+
+      const { error: updateError } = await supabase.from("contents").update(update).eq("id", target.id);
+      if (updateError) {
+        skipped.push({ slug: target.slug, reason: updateError.message });
+      } else {
+        reprocessed.push({ slug: target.slug, new_title: refined.title });
+      }
+    } catch (error) {
+      skipped.push({ slug: target.slug, reason: error instanceof Error ? error.message : "unknown_error" });
+    }
+  }
+
+  return json({ reprocessed, skipped, dry_run: dryRun });
+}
 
 async function getDiscoveryItems({
   body,
