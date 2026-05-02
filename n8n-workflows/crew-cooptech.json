@@ -1,0 +1,197 @@
+{
+  "name": "🚀 Briefing.Co — CREW COOPTECH",
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "⏰ Schedule — Qua 07h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [3],
+              "triggerAtHour": 7,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "scout-serper",
+      "name": "🔍 Scout — Serper.dev",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "onError": "continueRegularOutput",
+      "position": [480, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/news",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-API-KEY", "value": "={{ $env.SERPER_API_KEY }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "q": "inovação cooperativa OR IA cooperativa OR fintech cooperativa OR open finance cooperativa OR tecnologia Sicoob Sicredi",
+          "gl": "br",
+          "hl": "pt-br",
+          "num": 10,
+          "tbs": "qdr:w"
+        }
+      }
+    },
+    {
+      "id": "score-filter",
+      "name": "📊 Filtro Source Score ≥ 0.70",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "onError": "continueRegularOutput",
+      "position": [720, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const TRUSTED_SOURCES = ['startse.com','exame.com','neofeed.com.br','finsiders.com.br','techtudo.com.br','tecmundo.com.br'];\nconst COOP_KEYWORDS = ['cooperativa','cooperativismo','fintech','ia','inteligência artificial','open finance','tecnologia'];\nconst BLOCKED = ['assessoria','press release'];\n\nconst news = $input.all()[0].json.news || [];\nconst scored = [];\n\nfor (const item of news) {\n  let score = 0.5;\n  const url = (item.link || '').toLowerCase();\n  const combined = ((item.title || '') + ' ' + (item.snippet || '')).toLowerCase();\n\n  if (TRUSTED_SOURCES.some(s => url.includes(s))) score += 0.2;\n  const kwMatches = COOP_KEYWORDS.filter(kw => combined.includes(kw)).length;\n  score += Math.min(kwMatches * 0.05, 0.20);\n  if (BLOCKED.some(p => combined.includes(p))) score -= 0.3;\n\n  let vertical = 'geral';\n  if (combined.match(/sicredi|sicoob|unicred|crédito|fintech|open finance/)) vertical = 'credito';\n  else if (combined.match(/agro|agrotech/)) vertical = 'agro';\n  else if (combined.match(/unimed|healthtech/)) vertical = 'saude';\n\n  score = Math.min(Math.max(parseFloat(score.toFixed(2)), 0), 1);\n  if (score >= 0.70) {\n    scored.push({ json: { title: item.title, link: item.link, snippet: item.snippet, source: item.source, date: item.date, source_score: score, vertical } });\n  }\n}\nscored.sort((a, b) => b.json.source_score - a.json.source_score);\nreturn scored.slice(0, 3);"
+      }
+    },
+    {
+      "id": "check-has-news",
+      "name": "❓ Tem notícias aprovadas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "onError": "continueErrorOutput",
+      "position": [960, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "has-items",
+              "leftValue": "={{ $input.all().length }}",
+              "operator": { "operation": "gt", "type": "number" },
+              "rightValue": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "sintetizador-openai",
+      "name": "✍️ Sintetizador — CoopTech",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "onError": "continueRegularOutput",
+      "position": [1200, 220],
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "modelId": { "__rl": true, "value": "gpt-4o", "mode": "list", "cachedResultName": "gpt-4o" },
+        "options": { "maxTokens": 1500, "temperature": 0.4 },
+        "prompt": {
+          "messages": {
+            "values": [
+              {
+                "role": "system",
+                "content": "Você é o SINTETIZADOR COOPTECH do Briefing.Co.\n\nSeu trabalho: transformar uma notícia bruta em uma análise CoopTech focada em INOVAÇÃO e TECNOLOGIA para o cooperativismo.\n\nREGRAS ABSOLUTAS:\n1. Proibido introduções. Comece no FATO.\n2. Headline < 60 caracteres.\n3. Explique como a tecnologia (IA, Open Finance, etc.) impacta a operação, a eficiência ou o cooperado.\n4. Mínimo 3.000 caracteres.\n5. NUNCA invente dados técnicos.\n\nESTRUTURA OBRIGATÓRIA:\n## [Headline < 60 chars]\n**A Inovação:** [1 frase factual sobre a tecnologia/lançamento]\n\n**O Impacto Operacional:** [Análise de como isso muda o jogo para cooperativas]\n\n[Contexto técnico em 2-3 parágrafos curtos]\n\n**A vantagem injusta:** [Como o gestor pode implementar ou se preparar]\n\n---\n**TL;DR:**\n- [Ponto 1 em 1 linha]\n- [Ponto 2 em 1 linha]\n- [Ponto 3 em 1 linha]"
+              },
+              {
+                "role": "user",
+                "content": "=Transforme a notícia abaixo em uma análise CoopTech para gestores de cooperativas da vertical **{{ $json.vertical }}**:\n\nTítulo: {{ $json.title }}\nFonte: {{ $json.source }}\nResumo: {{ $json.snippet }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "gatekeeper",
+      "name": "🛡️ Gatekeeper — 5 Checks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "onError": "continueRegularOutput",
+      "position": [1440, 220],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item;\nconst content = item.json.message?.content || '';\nconst scoutData = item.json;\nconst BANNED = ['disruptivo','sinergia','pensar fora da caixa','estado da arte'];\nconst checks = {};\nchecks.density = { passed: content.length >= 2500, detail: `${content.length} chars (mín: 2500)` };\nconst found = BANNED.filter(w => content.toLowerCase().includes(w));\nchecks.banned_words = { passed: found.length === 0, detail: found.length ? `Banidas: ${found.join(', ')}` : 'OK' };\nchecks.unfair_advantage = { passed: content.toLowerCase().includes('vantagem injusta'), detail: 'OK' };\nconst allPassed = Object.values(checks).every(c => c.passed);\nreturn { json: {\n  content,\n  gatekeeper_passed: allPassed,\n  output_score: allPassed ? 0.95 : 0.50,\n  checks,\n  vertical: scoutData.vertical || 'geral',\n  source_url: scoutData.link || '',\n  source_name: scoutData.source || '',\n  source_score: scoutData.source_score || 0\n}};"
+      }
+    },
+    {
+      "id": "extract-article-data",
+      "name": "📦 Montar Payload do Artigo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "onError": "continueRegularOutput",
+      "position": [1920, 160],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const content = $json.content || '';\nconst headlineMatch = content.match(/##\\s*(.+)/);\nconst headline = headlineMatch ? headlineMatch[1].trim().replace(/[*_]/g,'') : 'CoopTech Innovation';\nconst leadMatch = content.match(/\\*\\*A Inovação:\\*\\*\\s*(.+)/);\nconst lead = leadMatch ? leadMatch[1].trim() : '';\nconst tldrMatch = content.match(/\\*\\*TL;DR:\\*\\*([\\s\\S]+)$/);\nconst tldr = tldrMatch ? tldrMatch[1].trim() : '';\nconst slug = headline.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9\\s-]/g,'').replace(/\\s+/g,'-').slice(0,80);\nreturn { json: {\n  slug: `${slug}-${Date.now()}`,\n  title: headline, lead, content, tldr,\n  caderno: 'protocolo', access_level: 'free',\n  vertical: $json.vertical || 'geral',\n  status: 'published',\n  published_at: new Date().toISOString(),\n  created_by: 'crew-cooptech-n8n'\n}};"
+      }
+    },
+    {
+      "id": "gate-decision",
+      "name": "🚦 Aprovado pelo Gate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "onError": "continueErrorOutput",
+      "position": [1680, 220],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "gate-check",
+              "leftValue": "={{ $json.gatekeeper_passed }}",
+              "operator": { "operation": "true", "type": "boolean", "singleValue": true }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "publish-supabase",
+      "name": "✅ Publicar no Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "onError": "continueRegularOutput",
+      "position": [2160, 160],
+      "credentials": {
+        "supabaseApi": { "id": "supabase-briefingco", "name": "Supabase — Briefing.Co" }
+      },
+      "parameters": {
+        "resource": "row",
+        "operation": "create",
+        "tableId": "contents",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "slug",             "fieldValue": "={{ $json.slug }}" },
+            { "fieldId": "title",            "fieldValue": "={{ $json.title }}" },
+            { "fieldId": "lead",             "fieldValue": "={{ $json.lead }}" },
+            { "fieldId": "content",          "fieldValue": "={{ $json.content }}" },
+            { "fieldId": "tldr",             "fieldValue": "={{ $json.tldr }}" },
+            { "fieldId": "caderno",          "fieldValue": "protocolo" },
+            { "fieldId": "status",           "fieldValue": "published" }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "⏰ Schedule — Qua 07h":  { "main": [[{ "node": "🔍 Scout — Serper.dev",            "type": "main", "index": 0 }]] },
+    "🔍 Scout — Serper.dev":      { "main": [[{ "node": "📊 Filtro Source Score ≥ 0.70",     "type": "main", "index": 0 }]] },
+    "📊 Filtro Source Score ≥ 0.70": { "main": [[{ "node": "❓ Tem notícias aprovadas?",      "type": "main", "index": 0 }]] },
+    "❓ Tem notícias aprovadas?":  { "main": [[{ "node": "✍️ Sintetizador — CoopTech", "type": "main", "index": 0 }]] },
+    "✍️ Sintetizador — CoopTech": { "main": [[{ "node": "🛡️ Gatekeeper — 5 Checks", "type": "main", "index": 0 }]] },
+    "🛡️ Gatekeeper — 5 Checks":  { "main": [[{ "node": "🚦 Aprovado pelo Gate?",             "type": "main", "index": 0 }]] },
+    "🚦 Aprovado pelo Gate?":      { "main": [[{ "node": "📦 Montar Payload do Artigo",    "type": "main", "index": 0 }]] },
+    "📦 Montar Payload do Artigo":       { "main": [[{ "node": "✅ Publicar no Supabase",         "type": "main", "index": 0 }]] }
+  },
+  "settings": {}
+}
