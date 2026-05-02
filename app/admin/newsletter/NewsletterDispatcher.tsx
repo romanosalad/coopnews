@@ -208,8 +208,9 @@ export function NewsletterDispatcher({ articles, verticalsWithCount }: Dispatche
           <label className="newsletter-checkbox">
             <input type="checkbox" checked={dryRun} onChange={(event) => setDryRun(event.target.checked)} />
             <span>
-              <strong>Dry Run</strong> — renderiza e retorna preview SEM enviar nenhum email.
-              Use sempre antes do disparo real.
+              <strong>Dry Run (apenas logs / enviar só para meu e-mail)</strong> —
+              renderiza o template sem disparar para a base. Se preencher
+              <em> Test recipient</em> acima, manda só pra esse endereço.
             </span>
           </label>
 
@@ -223,7 +224,7 @@ export function NewsletterDispatcher({ articles, verticalsWithCount }: Dispatche
               ? "Processando…"
               : dryRun
                 ? "Rodar Dry Run"
-                : `Disparar para ${selectedAudience} destinatários →`}
+                : "Disparar Newsletter Semanal →"}
           </button>
 
           {result ? <DispatchResultBlock result={result} /> : null}
@@ -247,8 +248,8 @@ function DispatchResultBlock({ result }: { result: DispatchResult }) {
       <div className="newsletter-result is-dry">
         <strong>Dry Run completo · nenhum email enviado</strong>
         <ul>
-          <li>Destinatários no escopo: <b>{result.would_send_to}</b></li>
-          <li>Assunto: <em>{result.sample_subject}</em></li>
+          <li><b>{result.would_send_to}</b> leads impactados (escopo do filtro atual)</li>
+          <li>Assunto que seria usado: <em>{result.sample_subject}</em></li>
           <li>HTML renderizado: {result.sample_html_preview_chars.toLocaleString()} caracteres</li>
         </ul>
         <p>
@@ -259,11 +260,11 @@ function DispatchResultBlock({ result }: { result: DispatchResult }) {
   }
   return (
     <div className="newsletter-result is-sent">
-      <strong>Disparado</strong>
+      <strong>Disparado · {result.sent_count} leads impactados</strong>
       <ul>
         <li>Edição: <em>{result.edition_label}</em></li>
         <li>Matérias incluídas: <b>{result.article_count}</b></li>
-        <li>Enviados com sucesso: <b>{result.sent_count}</b></li>
+        <li>Entregues com sucesso: <b>{result.sent_count}</b></li>
         {result.failed_count > 0 ? <li>Falhas: <b>{result.failed_count}</b></li> : null}
       </ul>
       {result.failed.length > 0 ? (
