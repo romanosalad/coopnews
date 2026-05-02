@@ -1,40 +1,72 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ComposerForm } from "@/components/admin/ComposerForm";
 import { getServerSupabase } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 
-export default async function EditArticlePlaceholder({ params }: Props) {
+export default async function EditArticlePage({ params }: Props) {
   const { id } = await params;
   const supabase = await getServerSupabase();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: editor } = await supabase
+    .from("editors")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const role = editor?.role ?? "editor";
+  const isReviewer = role === "chief_editor" || role === "admin";
+
   const { data: article } = await supabase
     .from("contents")
-    .select("title, slug, editorial_state, status, source_type, category, body_markdown")
+    .select(
+      "id, title, slug, body_markdown, source_url, image_url, category, decision_log, editorial_state, status, source_type, author_id, last_edited_at"
+    )
     .eq("id", id)
     .maybeSingle();
 
   if (!article) notFound();
 
+  const decisionLog = (article.decision_log ?? {}) as Record<string, unknown>;
+  const cmad = (decisionLog.cmad ?? {}) as Record<string, string>;
+  const dek =
+    typeof decisionLog.summary === "string" && decisionLog.summary.trim().length > 0
+      ? decisionLog.summary
+      : "";
+
   return (
-    <main className="admin-dashboard">
-      <header className="admin-dashboard-head">
-        <div>
-          <span className="section-sub">{article.editorial_state ?? article.status} · {article.source_type ?? "ai_ingested"}</span>
-          <h1>{article.title}</h1>
-          <p className="admin-dashboard-sub">
-            O composer de edição completa entra na Fase 2. Por enquanto, leitura rápida do conteúdo.
-          </p>
-        </div>
-        <Link href="/admin" className="admin-nav-cta">← Voltar</Link>
+    <main className="composer-page">
+      <header className="composer-page-head">
+        <span className="section-sub">
+          Composer · Editar · {article.editorial_state ?? article.status} · {article.source_type ?? "ai_ingested"}
+        </span>
+        <h1>{article.title}</h1>
       </header>
-      <section className="admin-section">
-        <header className="admin-section-head"><h2>Conteúdo atual</h2></header>
-        <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-body)", lineHeight: 1.6, fontSize: 15, padding: 20, background: "#fff", border: "1px solid rgba(0,0,0,0.08)", maxHeight: 600, overflow: "auto" }}>
-          {article.body_markdown}
-        </pre>
-      </section>
+      <ComposerForm
+        initial={{
+          id: article.id,
+          title: article.title ?? "",
+          slug: article.slug ?? "",
+          dek,
+          category: article.category ?? "Marketing Cooperativista",
+          source_url: article.source_url ?? "",
+          body_markdown: article.body_markdown ?? "",
+          image_url: article.image_url ?? "",
+          cmad_coop_business: cmad.coop_business ?? "",
+          cmad_marketing: cmad.marketing ?? "",
+          cmad_art_craft: cmad.art_craft ?? "",
+          cmad_design_ux: cmad.design_ux ?? ""
+        }}
+        isReviewer={isReviewer}
+        currentState={article.editorial_state ?? article.status}
+        isOwner={article.author_id === user.id}
+      />
     </main>
   );
 }

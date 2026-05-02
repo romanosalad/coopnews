@@ -120,6 +120,98 @@ a { color: inherit; text-decoration: none; }
 .admin-row-date { margin-left: auto; }
 .admin-row-metrics { color: var(--ink); font-weight: 700; }
 
+/* /admin composer */
+.composer-page { max-width: 1280px; margin: 0 auto; padding: 32px 32px 64px; }
+.composer-page-head { margin-bottom: 24px; }
+.composer-page-head h1 { font-family: var(--font-display); font-weight: 700; font-size: 36px; margin: 8px 0 0; letter-spacing: -0.01em; }
+.composer-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 32px; }
+.composer-main { display: flex; flex-direction: column; gap: 28px; background: #fff; padding: 32px; border: 1px solid rgba(0,0,0,0.08); border-top: 4px solid var(--brand); }
+.composer-section { display: flex; flex-direction: column; gap: 14px; }
+.composer-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.composer-h3 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 0 0 6px; letter-spacing: -0.005em; }
+.composer-help { margin: 0 0 8px; font-family: var(--font-body); font-size: 13px; line-height: 1.5; color: var(--mute); }
+.composer-help strong { color: var(--ink); font-weight: 700; }
+.composer-label { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink); text-transform: uppercase; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.composer-hint { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--mute); text-transform: none; }
+.composer-hint code { font-family: var(--font-ui); background: rgba(0,0,0,0.06); padding: 1px 5px; }
+.composer-hint.is-error { color: var(--accent); }
+.composer-input { padding: 12px 14px; border: 1px solid rgba(0,0,0,0.18); background: var(--paper); font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--ink); outline: none; border-radius: 0; }
+.composer-input:focus { border-color: var(--ink); }
+.composer-input-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.25; }
+.composer-input-dek { font-family: var(--font-display); font-style: italic; font-size: 16px; line-height: 1.5; resize: vertical; }
+.composer-input-slug { font-family: var(--font-ui); font-size: 13px; }
+.composer-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.composer-field { display: flex; flex-direction: column; gap: 8px; min-width: 180px; }
+.composer-field-grow { flex: 1; min-width: 200px; }
+.composer-textarea { font-family: var(--font-body); font-size: 15px; line-height: 1.7; min-height: 360px; resize: vertical; }
+.composer-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.composer-preview { padding: 18px 20px; background: var(--paper); border: 1px solid rgba(0,0,0,0.08); min-height: 360px; max-height: 520px; overflow: auto; }
+.composer-preview-label { display: block; margin-bottom: 12px; font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; color: var(--mute); text-transform: uppercase; }
+.composer-preview-empty { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--mute); margin: 0; }
+.composer-preview-body p { margin: 0 0 16px; font-family: var(--font-body); font-size: 15px; line-height: 1.65; color: var(--ink); }
+.composer-preview-body h2 { margin: 22px 0 10px; font-family: var(--font-display); font-weight: 600; font-size: 22px; line-height: 1.15; letter-spacing: -0.005em; }
+.composer-preview-body blockquote { margin: 18px 0; padding: 8px 0 8px 14px; border-left: 4px solid var(--accent); }
+.composer-preview-body blockquote p { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 17px; line-height: 1.3; margin: 0; }
+
+.composer-cover { display: flex; flex-direction: column; gap: 10px; }
+.composer-cover-preview { position: relative; width: 100%; max-width: 480px; aspect-ratio: 16/9; background: #eee; overflow: hidden; }
+.composer-cover-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.composer-cover-remove { position: absolute; top: 8px; right: 8px; padding: 6px 10px; background: rgba(0,0,0,0.7); color: var(--paper); border: 0; font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; }
+.composer-cover-empty { padding: 18px; background: var(--paper); border: 1px dashed rgba(0,0,0,0.2); font-family: var(--font-body); font-size: 13px; color: var(--mute); }
+.composer-cover-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+.composer-cover-upload { display: inline-flex; align-items: center; padding: 10px 16px; background: var(--ink); color: var(--brand); font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.18em; cursor: pointer; }
+.composer-cover-upload input { display: none; }
+.composer-cover-upload:hover { background: var(--accent); color: var(--paper); }
+.composer-cover-url { flex: 1; min-width: 200px; padding: 10px 12px; border: 1px solid rgba(0,0,0,0.18); background: var(--paper); font-family: var(--font-ui); font-size: 12px; }
+.composer-error { color: var(--accent); font-family: var(--font-body); font-size: 13px; }
+.composer-error-bar { padding: 12px 16px; background: rgba(255,90,54,0.08); border-left: 4px solid var(--accent); color: var(--ink); font-family: var(--font-body); font-size: 14px; }
+
+.composer-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,0.08); flex-wrap: wrap; }
+.composer-actions-left, .composer-actions-right { display: flex; gap: 10px; flex-wrap: wrap; }
+.composer-btn { padding: 12px 20px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); transition: opacity .12s, background .12s, color .12s; }
+.composer-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.composer-btn-secondary { background: var(--paper); color: var(--ink); }
+.composer-btn-secondary:hover:not(:disabled) { background: var(--ink); color: var(--brand); }
+.composer-btn-primary { background: var(--ink); color: var(--brand); }
+.composer-btn-primary:hover:not(:disabled) { background: var(--brand); color: var(--ink); }
+.composer-btn-approve { background: var(--brand); color: var(--ink); border-color: var(--brand); }
+.composer-btn-approve:hover:not(:disabled) { background: var(--ink); color: var(--brand); border-color: var(--ink); }
+.composer-btn-ghost { background: transparent; color: var(--mute); border-color: var(--mute); }
+.composer-btn-ghost:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+
+.composer-sidebar { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 24px; align-self: start; }
+.composer-sidebar-card { padding: 20px; background: #fff; border: 1px solid rgba(0,0,0,0.08); border-top: 3px solid var(--ink); }
+.composer-sidebar-card h4 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 8px 0 12px; letter-spacing: -0.005em; }
+.composer-sidebar-state { color: var(--accent); }
+.composer-sidebar-list { padding: 0; margin: 12px 0 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-body); font-size: 13px; line-height: 1.5; color: var(--mute); }
+.composer-sidebar-list li::before { content: "→ "; color: var(--brand); font-weight: 700; }
+
+.composer-assist { border-top-color: var(--accent); }
+.composer-assist-actions { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.composer-assist-actions button { padding: 10px 12px; background: var(--ink); color: var(--brand); border: 0; font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; text-align: left; }
+.composer-assist-actions button:hover:not(:disabled) { background: var(--accent); color: var(--paper); }
+.composer-assist-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+.composer-assist-error { padding: 10px 12px; background: rgba(255,90,54,0.1); color: var(--accent); font-family: var(--font-body); font-size: 12px; margin-top: 10px; }
+.composer-assist-result { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.08); }
+.composer-assist-result strong { display: block; margin-bottom: 8px; font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--ink); text-transform: uppercase; }
+.composer-assist-result p { margin: 0 0 8px; font-family: var(--font-body); font-size: 13px; line-height: 1.5; color: var(--ink); }
+.composer-assist-result ul { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.composer-assist-result ul button { width: 100%; text-align: left; padding: 8px 10px; background: var(--paper); border: 1px solid rgba(0,0,0,0.12); font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; line-height: 1.3; }
+.composer-assist-result ul button:hover { background: var(--brand); border-color: var(--brand); }
+.composer-assist-apply { margin-top: 6px; padding: 8px 12px; background: var(--brand); color: var(--ink); border: 0; font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; cursor: pointer; }
+.composer-assist-apply:hover { background: var(--ink); color: var(--brand); }
+.composer-assist-issues { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.composer-assist-issue { padding: 8px 10px; font-family: var(--font-body); font-size: 12px; line-height: 1.4; color: var(--ink); border-left: 3px solid var(--accent); background: rgba(255,90,54,0.06); }
+.composer-assist-issue.is-no_h2 { border-left-color: var(--mute-2); background: rgba(0,0,0,0.04); }
+.composer-assist-ok { color: var(--brand-2); font-weight: 600; }
+.composer-assist-brief { white-space: pre-wrap; font-family: var(--font-body); font-size: 12px; line-height: 1.5; color: var(--mute); padding: 10px; background: var(--paper); border: 1px solid rgba(0,0,0,0.08); margin: 0; max-height: 200px; overflow: auto; }
+
+@media (max-width: 1080px) {
+  .composer-grid { grid-template-columns: 1fr; }
+  .composer-sidebar { position: static; }
+  .composer-editor { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 720px) {
   .admin-topbar { flex-wrap: wrap; gap: 12px; padding: 12px 20px; }
   .admin-nav { flex-wrap: wrap; gap: 12px; }

@@ -1,26 +1,47 @@
-import Link from "next/link";
+import { ComposerForm } from "@/components/admin/ComposerForm";
+import { getServerSupabase } from "@/lib/supabase-server";
 
-export default function NewArticlePlaceholder() {
+export const dynamic = "force-dynamic";
+
+export default async function NewArticlePage() {
+  const supabase = await getServerSupabase();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const { data: editor } = await supabase
+    .from("editors")
+    .select("role")
+    .eq("user_id", user?.id ?? "")
+    .maybeSingle();
+
+  const role = editor?.role ?? "editor";
+  const isReviewer = role === "chief_editor" || role === "admin";
+
   return (
-    <main className="admin-dashboard">
-      <header className="admin-dashboard-head">
-        <div>
-          <span className="section-sub">Composer</span>
-          <h1>Nova matéria</h1>
-          <p className="admin-dashboard-sub">
-            O composer humano com sidebar de IA está sendo construído na Fase 2.
-          </p>
-        </div>
-        <Link href="/admin" className="admin-nav-cta">← Voltar ao dashboard</Link>
+    <main className="composer-page">
+      <header className="composer-page-head">
+        <span className="section-sub">Composer · Nova matéria</span>
+        <h1>Escrever para o CoopNews</h1>
       </header>
-      <section className="admin-section">
-        <header className="admin-section-head"><h2>Em construção</h2></header>
-        <p className="admin-section-empty">
-          Fase 2 entrega: editor markdown com preview, campos de C-MAD, upload de capa, ações
-          rápidas de IA (sugerir título, polir lead, gerar capa, checar voz, gerar C-MAD), e os
-          botões salvar como rascunho / submeter para revisão.
-        </p>
-      </section>
+      <ComposerForm
+        initial={{
+          title: "",
+          slug: "",
+          dek: "",
+          category: "Marketing Cooperativista",
+          source_url: "",
+          body_markdown: "",
+          image_url: "",
+          cmad_coop_business: "",
+          cmad_marketing: "",
+          cmad_art_craft: "",
+          cmad_design_ux: ""
+        }}
+        isReviewer={isReviewer}
+        currentState={null}
+        isOwner={true}
+      />
     </main>
   );
 }
