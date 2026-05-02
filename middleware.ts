@@ -39,7 +39,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (path === "/admin/login" && user) {
+  // Bypass the "logged-in users go to /admin" redirect when an error is in
+  // the URL — otherwise we infinite-loop with a session that has no editors
+  // row. The unauthorized page itself shows a Sair button.
+  const hasError = request.nextUrl.searchParams.has("error");
+  if (path === "/admin/login" && user && !hasError) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 

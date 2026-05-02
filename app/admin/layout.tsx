@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { CoopWordmark } from "@/components/brand/Wordmark";
 import { getServerSupabase } from "@/lib/supabase-server";
 
@@ -11,31 +10,47 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     data: { user }
   } = await supabase.auth.getUser();
 
-  // /admin/login is public; everything else needs an editor record.
-  // Middleware already guards the URL, so by the time we reach a non-login
-  // page in this layout we expect a session.
-  let editorRow: { display_name: string | null; role: string } | null = null;
-  if (user) {
-    const { data } = await supabase
-      .from("editors")
-      .select("display_name, role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    editorRow = data;
-
-    // No editors row means the user signed in but isn't authorized. Sign out
-    // and bounce back to login so we don't render the dashboard for randoms.
-    if (!editorRow) {
-      await supabase.auth.signOut();
-      redirect("/admin/login?redirectTo=/admin&error=not_authorized");
-    }
-  }
-
-  // When unauthenticated (only /admin/login can render here), let the page
-  // own its layout so it can use the public TopBar instead of the dark admin
-  // header. Avoids stacking two headers on the login screen.
+  // No session: let the page render its own header (only /admin/login is
+  // reachable in this state thanks to middleware).
   if (!user) {
     return <>{children}</>;
+  }
+
+  let editorRow: { display_name: string | null; role: string } | null = null;
+  const { data } = await supabase
+    .from("editors")
+    .select("display_name, role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  editorRow = data;
+
+  // Logged in but no editors row. Render a contained error screen with a
+  // Sair button instead of looping with auto sign-out + redirect.
+  if (!editorRow) {
+    return (
+      <div className="admin-shell">
+        <header className="admin-topbar">
+          <Link href="/admin" className="admin-brand">
+            <CoopWordmark height={20} dark />
+            <span className="admin-brand-tag">REDAÇÃO</span>
+          </Link>
+          <form action="/auth/signout" method="post">
+            <button type="submit" className="admin-nav-signout">Sair</button>
+          </form>
+        </header>
+        <div className="admin-main">
+          <div className="admin-unauthorized">
+            <span className="section-sub">Acesso restrito</span>
+            <h1>Sua conta não tem perfil de editor</h1>
+            <p>
+              Você logou com <strong>{user.email}</strong>, mas esse email ainda não está
+              cadastrado como editor. Peça acesso ao chief_editor da redação ou clique em
+              Sair para tentar com outra conta.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
