@@ -1,6 +1,7 @@
 # CoopNews AI ingestion
 
 This project keeps the approved editorial layout static by default, then lets Supabase feed real articles into `contents`.
+The editorial contract lives in `NEWSCOOP_GUIDELINES.md`.
 
 ## What the ingestion does
 
@@ -97,6 +98,7 @@ curl -X POST "https://YOUR_PROJECT_REF.supabase.co/functions/v1/ingest-news" \
 - `dry_run: true` returns the records without inserting them.
 - The default discovery is international: cooperative marketing, advertising, branding, credit unions, mutual banks, building societies and co-op campaigns in markets such as US, UK, Canada, Australia, Germany, France, Netherlands, Sweden and Japan.
 - The refiner rewrites the article in Portuguese with a B9/Mundo do Marketing-style editorial rhythm: fact, context, strategy, impact and analysis. It should not copy long passages from the source.
+- Every accepted article must include a C-MAD decision log: Coop Business, Marketing, Art/Craft and Design/UX.
 - If AI marks the article irrelevant, the function discards it.
 - Real article images come from the scraped article. Local geometric visuals remain fallback placeholders only.
 - The article page always shows the original source link in the "Transparência Editorial" block.

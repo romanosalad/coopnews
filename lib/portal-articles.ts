@@ -111,7 +111,7 @@ function contentToArticle(content: Content): CoopArticle {
     eyebrow: `${category.toUpperCase()} · IA`,
     eyebrowClass: categoryToEyebrowClass(category),
     titleHtml: escapeHtml(content.title),
-    dek: body[0] ?? "Matéria refinada pela curadoria de IA do Coop News.",
+    dek: toLead(body[0] ?? "Matéria refinada pela curadoria de IA do Coop News."),
     author: "Curadoria IA",
     readTime: estimateReadTime(content.body_markdown),
     placeholder: placeholderFromSlug(content.slug),
@@ -137,6 +137,12 @@ function estimateReadTime(markdown: string) {
   const words = markdown.split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(3, Math.ceil(words / 180));
   return `${minutes} min de leitura`;
+}
+
+function toLead(value: string) {
+  const cleanValue = value.replace(/^#+\s+/gm, "").replace(/\*\*/g, "").trim();
+  if (cleanValue.length <= 160) return cleanValue;
+  return `${cleanValue.slice(0, 157).replace(/\s+\S*$/, "")}...`;
 }
 
 function categoryToEyebrowClass(category: string) {

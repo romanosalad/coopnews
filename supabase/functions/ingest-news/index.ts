@@ -30,6 +30,13 @@ type RefinedStory = {
   decision_log: {
     verdict: "publish" | "draft" | "discard";
     reasons: string[];
+    cmad: {
+      coop_business: string;
+      marketing: string;
+      art_craft: string;
+      design_ux: string;
+    };
+    desk: "Capa" | "CoopTech" | "La Fora" | "Vozes" | "Forum";
     source_terms: string[];
     source_url: string;
   };
@@ -283,7 +290,7 @@ async function refineWithOpenAI(
         {
           role: "system",
           content:
-            "Voce e um editor senior do Coop News, um jornal brasileiro sobre marketing, publicidade, criatividade e tecnologia aplicados ao universo cooperativista global. Sua missao e descobrir casos internacionais e traduzir/reescrever em portugues do Brasil com uma pegada editorial analitica, espirituosa e precisa, proxima do formato de B9 e Mundo do Marketing: abre com o fato, explica o contexto, interpreta a estrategia e aponta por que importa. Nunca copie frases longas da fonte original; transforme, resuma, contextualize e atribua. Publique somente se o texto original falar explicitamente de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group, cooperativa agricola/consumo/plataforma, ou marca cooperativa reconhecivel. Descarte roundups genericos, posts de SEO fracos, conteudos onde cooperativa foi apenas inferida pela IA, e noticias sem relacao com marketing, publicidade, branding, comunicacao, martech, experiencia do associado/cliente ou campanhas. Responda sempre e somente um objeto JSON valido no schema pedido. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
+            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use uma voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing. Reescreva em portugues do Brasil: nao traduza literalmente e nao copie frases longas da fonte. Abra com o fato, depois contexto, estrategia, C-MAD e impacto. A matriz C-MAD e obrigatoria: Coop Business, Marketing, Art/Craft e Design/UX. Publique somente se a fonte falar explicitamente de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Descarte roundups genericos, SEO fraco e textos onde cooperativismo foi inferido. Cadernos validos: Capa para campanhas e movimentos de marketing; CoopTech para IA, automacao e martech; La Fora para B Corp/ESG/marketing do bem que inspire cooperativas; Vozes apenas para opiniao humana; Forum apenas para ranking/comunidade. Titulo de capa deve ter ate 75 caracteres; lead/feed ate 160 caracteres; artigos longos devem usar H2 a cada cerca de 300 palavras. Responda sempre e somente JSON valido no schema pedido. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
         },
         {
           role: "user",
@@ -301,6 +308,13 @@ async function refineWithOpenAI(
               decision_log: {
                 verdict: "publish|draft|discard",
                 reasons: ["string"],
+                desk: "Capa|CoopTech|La Fora|Vozes|Forum",
+                cmad: {
+                  coop_business: "string",
+                  marketing: "string",
+                  art_craft: "string",
+                  design_ux: "string"
+                },
                 source_terms: input.sourceTerms,
                 source_url: input.sourceUrl
               },
@@ -359,11 +373,32 @@ async function refineWithOpenAI(
     decision_log: {
       verdict: shouldPublish ? "publish" : "draft",
       reasons: Array.isArray(parsed.decision_log?.reasons) ? parsed.decision_log.reasons.map(String) : [],
+      cmad: normalizeCmad(parsed.decision_log?.cmad),
+      desk: normalizeDesk(parsed.decision_log?.desk, parsed.category),
       source_terms: input.sourceTerms,
       source_url: input.sourceUrl
     },
     story_json: slides
   };
+}
+
+function normalizeCmad(value: unknown) {
+  const cmad = typeof value === "object" && value ? value as Record<string, unknown> : {};
+  return {
+    coop_business: clean(cmad.coop_business),
+    marketing: clean(cmad.marketing),
+    art_craft: clean(cmad.art_craft),
+    design_ux: clean(cmad.design_ux)
+  };
+}
+
+function normalizeDesk(value: unknown, category: unknown): RefinedStory["decision_log"]["desk"] {
+  const normalized = clean(value || category).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (normalized.includes("tech") || normalized.includes("martech") || normalized.includes("ia") || normalized.includes("automacao")) return "CoopTech";
+  if (normalized.includes("fora") || normalized.includes("esg") || normalized.includes("b corp") || normalized.includes("bem")) return "La Fora";
+  if (normalized.includes("vozes") || normalized.includes("opiniao")) return "Vozes";
+  if (normalized.includes("forum") || normalized.includes("ranking")) return "Forum";
+  return "Capa";
 }
 
 function normalizeSlides(value: unknown): StorySlide[] {

@@ -63,10 +63,23 @@ export default async function ContentPage({ params }: Props) {
         </section>
 
         <section className="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[1fr_320px]">
-          <div
-            className="prose prose-lg max-w-none prose-p:text-[19px] prose-p:leading-9"
-            dangerouslySetInnerHTML={{ __html: markdownToHtml(content.body_markdown) }}
-          />
+          <div className="space-y-8">
+            <div
+              className="prose prose-lg max-w-none prose-p:text-[19px] prose-p:leading-9"
+              dangerouslySetInnerHTML={{ __html: markdownToHtml(content.body_markdown) }}
+            />
+            {content.source_url ? (
+              <div className="rounded-lg border border-ink/10 border-t-4 border-t-coop bg-white p-5 shadow-sm">
+                <p className="text-xs font-black uppercase tracking-normal text-ink/60">Transparencia editorial</p>
+                <p className="mt-3 text-sm leading-6 text-ink/70">
+                  Esta analise foi traduzida e reescrita pela curadoria do CoopNews a partir de uma fonte externa.
+                </p>
+                <a href={content.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block rounded-full bg-ink px-4 py-3 text-sm font-black text-coop">
+                  Ler materia original
+                </a>
+              </div>
+            ) : null}
+          </div>
 
           <aside className="space-y-4">
             <div className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
