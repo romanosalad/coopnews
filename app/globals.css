@@ -63,6 +63,37 @@ a { color: inherit; text-decoration: none; }
 
 .section-rule { border: 0; height: 1px; background: var(--ink); max-width: 1280px; margin: 0 auto; opacity: 0.85; }
 
+/* DecidorGate — paywall de cadastro (Camada 2). Aparece após o 3º parágrafo
+   de PROTOCOLOs para visitantes sem cookie briefing_decisor. */
+.decidor-gate { position: relative; margin: 8px 0 48px; padding-top: 64px; }
+.decidor-gate-fade { position: absolute; top: -120px; left: 0; right: 0; height: 160px; background: linear-gradient(to bottom, rgba(250,250,247,0) 0%, rgba(250,250,247,0.85) 50%, var(--paper) 100%); pointer-events: none; z-index: 1; }
+.decidor-gate-card { position: relative; z-index: 2; padding: 36px 36px 32px; background: #fff; border: 1px solid rgba(0,0,0,0.08); border-top: 4px solid var(--ink); box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
+.decidor-gate-eyebrow { display: inline-block; padding: 4px 10px 3px; background: var(--ink); color: var(--brand); font-family: var(--font-ui); font-size: 10px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; }
+.decidor-gate-title { margin: 14px 0 12px; font-family: var(--font-display); font-weight: 700; font-size: 38px; line-height: 1.1; letter-spacing: -0.01em; color: var(--ink); }
+.decidor-gate-title em { font-style: italic; font-weight: 700; color: var(--accent); }
+.decidor-gate-tag { margin: 0 0 24px; font-family: var(--font-display); font-style: italic; font-size: 17px; line-height: 1.5; color: var(--mute); max-width: 580px; }
+.decidor-gate-form { display: flex; flex-direction: column; gap: 14px; }
+.decidor-gate-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.decidor-gate-field { display: flex; flex-direction: column; gap: 6px; }
+.decidor-gate-field span { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+.decidor-gate-field input,
+.decidor-gate-field select { padding: 12px 14px; border: 1px solid rgba(0,0,0,0.18); background: var(--paper); font-family: var(--font-body); font-size: 15px; color: var(--ink); outline: none; border-radius: 0; }
+.decidor-gate-field input:focus,
+.decidor-gate-field select:focus { border-color: var(--ink); }
+.decidor-gate-error { margin: 4px 0 0; padding: 10px 14px; background: rgba(255,90,54,0.08); border-left: 3px solid var(--accent); color: var(--ink); font-family: var(--font-body); font-size: 13px; }
+.decidor-gate-submit { margin-top: 8px; padding: 16px; background: var(--ink); color: var(--brand); border: 0; font-family: var(--font-ui); font-size: 13px; font-weight: 700; letter-spacing: 0.18em; cursor: pointer; transition: background .14s, color .14s; }
+.decidor-gate-submit:hover:not(:disabled) { background: var(--accent); color: var(--paper); }
+.decidor-gate-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+.decidor-gate-fineprint { margin: 14px 0 0; font-family: var(--font-body); font-size: 12px; line-height: 1.5; color: var(--mute); }
+@media (max-width: 720px) {
+  .decidor-gate-card { padding: 28px 22px 24px; }
+  .decidor-gate-title { font-size: 30px; }
+  .decidor-gate-row { grid-template-columns: 1fr; }
+}
+/* Modo Foco: gate fica suave mas mantém função */
+html.focus-mode .decidor-gate-card { background: rgba(255,255,255,0.7); }
+html.focus-mode .decidor-gate-fade { background: linear-gradient(to bottom, rgba(251,247,238,0) 0%, rgba(251,247,238,0.85) 50%, #FBF7EE 100%); }
+
 /* Focus Mode toggle button — sit no header da matéria, abaixo do back link.
    Discreto desligado, claramente "ativo" quando ligado. */
 .article-hero-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
