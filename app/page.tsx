@@ -24,14 +24,6 @@ export default async function HomePage() {
       <TopBar />
       <ColunistasSection />
       <hr className="section-rule" aria-hidden="true" />
-      <section className="news-banner" aria-labelledby="news-banner-title">
-        <div className="shell">
-          <span className="section-sub">CAPA · O QUE ESTÁ NO RADAR HOJE</span>
-          <h2 id="news-banner-title" className="section-title">
-            News<span className="news-banner-dots">…</span>
-          </h2>
-        </div>
-      </section>
       <Hero feature={articles.heroFeature} leftArticles={articles.heroLeft} rightArticles={articles.heroRight} />
       <EditoriasSection articles={articles.coopTech} />
       <PopularSection articles={articles.popular} />
