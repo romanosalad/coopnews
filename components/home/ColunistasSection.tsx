@@ -27,7 +27,7 @@ const colunistas = [
 
 export function ColunistasSection() {
   return (
-    <section className="colunistas">
+    <section className="colunistas" id="colunistas">
       <div className="shell">
         <div className="section-head">
           <div>

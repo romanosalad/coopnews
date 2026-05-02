@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { VoteButton } from "@/app/VoteButton";
+import { ArticleEngagementTracker } from "@/components/analytics/ArticleEngagementTracker";
 import { markdownToHtml } from "@/lib/markdown";
 import { getContentBySlug } from "@/lib/supabase";
 
@@ -17,6 +18,7 @@ export default async function ContentPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-paper">
+      <ArticleEngagementTracker contentId={content.id} />
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <Link href="/" className="text-2xl font-black">

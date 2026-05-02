@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ArticleLink } from "@/components/analytics/ArticleLink";
 import type { CoopArticle } from "@/lib/coop-news-data";
 import { ArticleVisual } from "@/components/ui/ArticleVisual";
 
@@ -23,19 +23,16 @@ export function Hero({ feature, leftArticles, rightArticles }: HeroProps) {
         <div className="hero-col">
           <article className="hero-feature">
             <span className={`eyebrow ${feature.eyebrowClass}`}>{feature.eyebrow}</span>
-            <Link href={`/materias/${feature.slug}`} className="story-image" aria-label={`Abrir materia: ${stripHtml(feature.titleHtml)}`}>
+            <ArticleLink contentId={feature.id} href={`/materias/${feature.slug}`} className="story-image" aria-label={`Abrir materia: ${stripHtml(feature.titleHtml)}`}>
               <ArticleVisual alt="" imageUrl={feature.imageUrl} placeholder={feature.placeholder} />
-            </Link>
+            </ArticleLink>
             <h1>
-              <Link href={`/materias/${feature.slug}`} dangerouslySetInnerHTML={{ __html: feature.titleHtml }} />
+              <ArticleLink contentId={feature.id} href={`/materias/${feature.slug}`} dangerouslySetInnerHTML={{ __html: feature.titleHtml }} />
             </h1>
             <p className="dek">{feature.dek}</p>
             <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 8 }}>
               <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.16em", color: "var(--mute)" }}>
-                POR {feature.author.toUpperCase()}
-              </span>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.16em", color: "var(--mute)" }}>
-                · {feature.readTime.toUpperCase()}
+                {feature.readTime.toUpperCase()}
               </span>
             </div>
           </article>
@@ -61,7 +58,7 @@ function Story({ article }: { article: CoopArticle }) {
     <article className="story">
       <span className={`eyebrow ${article.eyebrowClass}`}>{article.eyebrow}</span>
       <h3>
-        <Link href={`/materias/${article.slug}`} dangerouslySetInnerHTML={{ __html: article.titleHtml }} />
+        <ArticleLink contentId={article.id} href={`/materias/${article.slug}`} dangerouslySetInnerHTML={{ __html: article.titleHtml }} />
       </h3>
     </article>
   );

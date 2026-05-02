@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArticleEngagementTracker } from "@/components/analytics/ArticleEngagementTracker";
 import { BrandCornerMotif } from "@/components/brand/BrandCornerMotif";
 import { CoopWordmark } from "@/components/brand/Wordmark";
 import { Footer } from "@/components/layout/Footer";
 import { TopBar } from "@/components/layout/TopBar";
 import { ArticleVisual } from "@/components/ui/ArticleVisual";
-import { coopArticles } from "@/lib/coop-news-data";
+import { coopArticles, type CoopArticle } from "@/lib/coop-news-data";
 import { getPortalArticleBySlug } from "@/lib/portal-articles";
 
 type Props = {
@@ -38,6 +39,7 @@ export default async function MateriaPage({ params }: Props) {
 
   return (
     <main>
+      <ArticleEngagementTracker contentId={article.id} />
       <BrandCornerMotif />
       <div style={{ position: "absolute", top: 18, left: 32, zIndex: 60 }}>
         <CoopWordmark height={26} dark />
@@ -52,8 +54,7 @@ export default async function MateriaPage({ params }: Props) {
             <h1 dangerouslySetInnerHTML={{ __html: article.titleHtml }} />
             <p className="article-dek">{article.dek}</p>
             <div className="article-meta">
-              <span>POR {article.author.toUpperCase()}</span>
-              <span>· {article.readTime.toUpperCase()}</span>
+              <span>{article.readTime.toUpperCase()}</span>
               <span>· COOP NEWS</span>
               {typeof article.relevanceScore === "number" ? <span>· IA {Math.round(article.relevanceScore * 100)}%</span> : null}
             </div>
@@ -65,19 +66,15 @@ export default async function MateriaPage({ params }: Props) {
 
         <div className="article-body-wrap">
           <div className="article-body">
-            {article.body.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
+            {article.body.map((paragraph, index) => (
+              <ArticleBodyBlock article={article} paragraph={paragraph} index={index} key={`${paragraph}-${index}`} />
             ))}
-            <blockquote>
-              <p>
-                O que importa para o Coop News é separar campanha bonita de comunicação que muda comportamento, relação e valor percebido.
-              </p>
-            </blockquote>
+
             {article.isAiGenerated ? (
               <div className="article-source-box">
                 <span className="section-sub">TRANSPARÊNCIA EDITORIAL</span>
                 <p>
-                  Esta matéria foi refinada por IA a partir de uma fonte externa. Quando disponível, a imagem usada é a imagem original capturada do artigo.
+                  Esta matéria foi traduzida, reescrita e diagramada pela curadoria do CoopNews a partir de uma fonte externa.
                 </p>
                 {article.sourceUrl ? (
                   <a href={article.sourceUrl} target="_blank" rel="noreferrer" className="source-link">
@@ -95,13 +92,17 @@ export default async function MateriaPage({ params }: Props) {
 
           <aside className="article-sidebar">
             <div className="article-sidebar-card">
-              <span className="section-sub">{article.isAiGenerated ? "CURADORIA IA" : "PRÓXIMA LEITURA"}</span>
-              <h2>{article.isAiGenerated ? "Decisão editorial" : "Também nesta editoria"}</h2>
+              <span className="section-sub">{article.isAiGenerated ? "MATRIZ C-MAD" : "PRÓXIMA LEITURA"}</span>
+              <h2>{article.isAiGenerated ? "Leitura estratégica" : "Também nesta editoria"}</h2>
               {article.isAiGenerated ? (
                 <div className="article-related-list">
                   <div className="article-related">
                     <span className={`eyebrow ${article.eyebrowClass}`}>SCORE</span>
                     <strong>{typeof article.relevanceScore === "number" ? `${Math.round(article.relevanceScore * 100)}% de relevância` : "Aguardando score"}</strong>
+                  </div>
+                  <div className="article-related">
+                    <span className={`eyebrow ${article.eyebrowClass}`}>COOP BUSINESS</span>
+                    <strong>{getCmadValue(article, "coop_business") || "Valor para associado e comunidade"}</strong>
                   </div>
                   <div className="article-related">
                     <span className={`eyebrow ${article.eyebrowClass}`}>IMAGEM</span>
@@ -126,6 +127,63 @@ export default async function MateriaPage({ params }: Props) {
       <Footer />
     </main>
   );
+}
+
+function ArticleBodyBlock({ article, paragraph, index }: { article: CoopArticle; paragraph: string; index: number }) {
+  return (
+    <>
+      <p>{paragraph}</p>
+      {index === 0 ? (
+        <div className="article-context-card">
+          <span className="section-sub">POR QUE IMPORTA</span>
+          <strong>{getCmadValue(article, "marketing") || article.dek}</strong>
+        </div>
+      ) : null}
+      {index === 2 ? (
+        <aside className="article-pullquote">
+          <span>Leitura CoopNews</span>
+          <strong>{pickPullQuote(article)}</strong>
+        </aside>
+      ) : null}
+      {index === 4 ? (
+        <div className="article-cmad-grid">
+          <div>
+            <span>C</span>
+            <strong>Coop Business</strong>
+            <p>{getCmadValue(article, "coop_business") || "Valor concreto para associado, operação ou comunidade."}</p>
+          </div>
+          <div>
+            <span>M</span>
+            <strong>Marketing</strong>
+            <p>{getCmadValue(article, "marketing") || "Posicionamento, marca e nível de consciência."}</p>
+          </div>
+          <div>
+            <span>A</span>
+            <strong>Art/Craft</strong>
+            <p>{getCmadValue(article, "art_craft") || "Direção de arte, copy e originalidade da peça."}</p>
+          </div>
+          <div>
+            <span>D</span>
+            <strong>Design/UX</strong>
+            <p>{getCmadValue(article, "design_ux") || "Jornada, pertencimento e experiência do cooperado."}</p>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function getCmadValue(article: CoopArticle, key: string) {
+  const cmad = article.decisionLog?.cmad;
+  if (!cmad || typeof cmad !== "object") return "";
+  const value = (cmad as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : "";
+}
+
+function pickPullQuote(article: CoopArticle) {
+  const craft = getCmadValue(article, "art_craft");
+  if (craft) return craft;
+  return article.dek;
 }
 
 function stripHtml(value: string) {

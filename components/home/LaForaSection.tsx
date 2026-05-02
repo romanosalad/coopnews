@@ -1,60 +1,62 @@
-import Link from "next/link";
-import { getArticleBySlug } from "@/lib/coop-news-data";
-import { Placeholder } from "@/components/ui/Placeholder";
+import { ArticleLink } from "@/components/analytics/ArticleLink";
+import { ArticleVisual } from "@/components/ui/ArticleVisual";
+import type { CoopArticle } from "@/lib/coop-news-data";
 
-export function LaForaSection() {
-  const feature = getArticleBySlug("duolingo-tom-corporativo-coops");
-  const mercadoLivre = getArticleBySlug("mercado-livre-frete-gratis-pertencimento");
-  const nubank = getArticleBySlug("nubank-roxo-virou-commodity");
+type LaForaSectionProps = {
+  articles: CoopArticle[];
+};
 
-  if (!feature || !mercadoLivre || !nubank) return null;
+export function LaForaSection({ articles }: LaForaSectionProps) {
+  const [feature, ...sideArticles] = articles;
+  if (!feature) return null;
 
   return (
-    <section className="lafora">
+    <section className="lafora" id="la-fora">
       <div className="shell lafora-inner">
         <div className="lafora-head">
           <div>
             <span className="eyebrow on-dark editoria-lafora" style={{ display: "block", marginBottom: 16 }}>
-              EDITORIA · NOVA NO COOP NEWS
+              EDITORIA · MARKETING DO BEM GLOBAL
             </span>
             <h2 className="lafora-title">Lá <em>Fora</em>.</h2>
           </div>
           <p className="lafora-tag">
-            O que está acontecendo no marketing de fora do mundo cooperativista — e o que dá pra roubar (com crédito) pra dentro.
+            Empresas B, ESG, comunidade e consumo global: o que não é coop, mas ensina muito para quem vive de pertencimento.
           </p>
         </div>
         <div className="lafora-grid">
           <article className="lafora-feature">
-            <Link href={`/materias/${feature.slug}`} className="story-image" aria-label="Abrir case Duolingo">
-              <Placeholder idx={feature.placeholder} />
-            </Link>
+            <ArticleLink contentId={feature.id} href={`/materias/${feature.slug}`} className="story-image" aria-label={`Abrir materia: ${stripHtml(feature.titleHtml)}`}>
+              <ArticleVisual alt="" imageUrl={feature.imageUrl} placeholder={feature.placeholder} />
+            </ArticleLink>
             <span className="eyebrow on-dark editoria-lafora">{feature.eyebrow}</span>
             <h2>
-              <Link href={`/materias/${feature.slug}`} dangerouslySetInnerHTML={{ __html: feature.titleHtml }} />
+              <ArticleLink contentId={feature.id} href={`/materias/${feature.slug}`} dangerouslySetInnerHTML={{ __html: feature.titleHtml }} />
             </h2>
             <p className="dek" style={{ color: "#999" }}>{feature.dek}</p>
           </article>
-          <LaforaSide article={mercadoLivre} />
-          <LaforaSide article={nubank} />
+          {sideArticles.slice(0, 2).map((article) => (
+            <LaforaSide key={article.slug} article={article} />
+          ))}
         </div>
         <div className="lafora-bottom">
           <span className="lafora-note">Toda quarta-feira, no seu inbox.</span>
-          <a href="#" className="lafora-button">ASSINAR LÁ FORA →</a>
+          <a href="#la-fora" className="lafora-button">ASSINAR LÁ FORA →</a>
         </div>
       </div>
     </section>
   );
 }
 
-function LaforaSide({ article }: { article: NonNullable<ReturnType<typeof getArticleBySlug>> }) {
+function LaforaSide({ article }: { article: CoopArticle }) {
   return (
     <article className="lafora-side">
-      <Link href={`/materias/${article.slug}`} className="story-image" aria-label={`Abrir matéria: ${stripHtml(article.titleHtml)}`}>
-        <Placeholder idx={article.placeholder} />
-      </Link>
+      <ArticleLink contentId={article.id} href={`/materias/${article.slug}`} className="story-image" aria-label={`Abrir materia: ${stripHtml(article.titleHtml)}`}>
+        <ArticleVisual alt="" imageUrl={article.imageUrl} placeholder={article.placeholder} />
+      </ArticleLink>
       <span className="eyebrow on-dark editoria-lafora">{article.eyebrow}</span>
       <h3>
-        <Link href={`/materias/${article.slug}`} dangerouslySetInnerHTML={{ __html: article.titleHtml }} />
+        <ArticleLink contentId={article.id} href={`/materias/${article.slug}`} dangerouslySetInnerHTML={{ __html: article.titleHtml }} />
       </h3>
     </article>
   );

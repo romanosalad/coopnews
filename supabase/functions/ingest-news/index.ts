@@ -22,6 +22,7 @@ type StorySlide = {
 type RefinedStory = {
   title: string;
   slug: string;
+  summary: string;
   body_markdown: string;
   category: string;
   geo_location: string | null;
@@ -30,6 +31,7 @@ type RefinedStory = {
   decision_log: {
     verdict: "publish" | "draft" | "discard";
     reasons: string[];
+    summary: string;
     cmad: {
       coop_business: string;
       marketing: string;
@@ -58,7 +60,10 @@ const DEFAULT_TERMS = [
   "\"Nationwide Building Society\" brand campaign agency",
   "\"REI Co-op\" brand campaign marketing",
   "Migros cooperative brand campaign agency",
-  "Arla cooperative brand campaign marketing"
+  "Arla cooperative brand campaign marketing",
+  "\"B Corp\" \"brand campaign\" agency social impact",
+  "\"ESG\" \"marketing campaign\" brand agency community",
+  "\"purpose driven\" \"brand campaign\" cooperative inspiration"
 ];
 
 const DEFAULT_SEARCH_LOCALES = [
@@ -290,15 +295,16 @@ async function refineWithOpenAI(
         {
           role: "system",
           content:
-            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use uma voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing. Reescreva em portugues do Brasil: nao traduza literalmente e nao copie frases longas da fonte. Abra com o fato, depois contexto, estrategia, C-MAD e impacto. A matriz C-MAD e obrigatoria: Coop Business, Marketing, Art/Craft e Design/UX. Publique somente se a fonte falar explicitamente de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Descarte roundups genericos, SEO fraco e textos onde cooperativismo foi inferido. Cadernos validos: Capa para campanhas e movimentos de marketing; CoopTech para IA, automacao e martech; La Fora para B Corp/ESG/marketing do bem que inspire cooperativas; Vozes apenas para opiniao humana; Forum apenas para ranking/comunidade. Titulo de capa deve ter ate 75 caracteres; lead/feed ate 160 caracteres; artigos longos devem usar H2 a cada cerca de 300 palavras. Responda sempre e somente JSON valido no schema pedido. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
+            "Voce e o Editor-Chefe do CoopNews Engine V1.0. CoopNews nao e um portal institucional; e uma plataforma de market intelligence para cooperativas. Use uma voz analitica, provocativa e estrategica, com ritmo editorial proximo de B9 e Mundo do Marketing. Reescreva em portugues do Brasil: nao traduza literalmente e nao copie frases longas da fonte. Crie um titulo novo, editorial e provocativo; nunca apenas traduza ou copie o titulo original. Abra com o fato, depois contexto, estrategia, C-MAD e impacto. A matriz C-MAD e obrigatoria: Coop Business, Marketing, Art/Craft e Design/UX. Publique se a fonte falar explicitamente de cooperativa, co-operative, co-op, credit union, mutual, building society, cooperative group ou marca cooperativa reconhecivel. Para o caderno La Fora, tambem aceite cases de B Corp, ESG, impacto social, comunidade ou marketing do bem quando houver aprendizado claro para cooperativas. Descarte roundups genericos, SEO fraco e textos onde cooperativismo foi inferido sem utilidade estrategica. Cadernos validos: Capa para campanhas e movimentos de marketing; CoopTech para IA, automacao e martech; La Fora para B Corp/ESG/marketing do bem que inspire cooperativas; Vozes apenas para opiniao humana; Forum apenas para ranking/comunidade. Titulo de capa deve ter ate 75 caracteres; summary/feed deve ser um pre-resumo de ate 160 caracteres, sem copiar a primeira frase do artigo; artigos longos devem usar H2 a cada cerca de 300 palavras. Responda sempre e somente JSON valido no schema pedido. Se irrelevante, retorne apenas {\"verdict\":\"discard\"}."
         },
         {
           role: "user",
           content: JSON.stringify({
             expected_schema: {
               verdict: "publish|draft|discard",
-              title: "string",
+              title: "new editorial title in Brazilian Portuguese, max 75 characters, not a literal translation",
               slug: "kebab-case string",
+              summary: "pre-summary for feed, max 160 characters, not the first sentence of body_markdown",
               category: "Criatividade|Martech|IA|Comunicacao do Bem|Automacao|La Fora|Marketing Cooperativista|Cooperativismo Global",
               body_markdown:
                 "6 to 9 short paragraphs in Brazilian Portuguese, rewritten as an original Coop News article: no bullet list, no copied lead, no source link inside the body",
@@ -349,6 +355,7 @@ async function refineWithOpenAI(
 
   const title = clean(parsed.title) || input.scraped.title;
   const bodyMarkdown = clean(parsed.body_markdown);
+  const summary = clean(parsed.summary).slice(0, 180);
   const slides = normalizeSlides(parsed.story_json);
   const rawScore = Number(parsed.relevance_score ?? parsed.relevanceScore ?? parsed.score);
   const hasCompleteArticle = bodyMarkdown.length >= 600;
@@ -358,13 +365,12 @@ async function refineWithOpenAI(
   const shouldPublish =
     hasCompleteArticle &&
     hasCompleteStory &&
-    modelVerdict !== "draft" &&
-    Boolean(parsed.publish !== false) &&
     relevanceScore >= input.publishThreshold;
 
   return {
     title,
     slug: slugify(parsed.slug || title),
+    summary,
     body_markdown: bodyMarkdown,
     category: clean(parsed.category) || "Marketing Cooperativista",
     geo_location: clean(parsed.geo_location) || null,
@@ -373,6 +379,7 @@ async function refineWithOpenAI(
     decision_log: {
       verdict: shouldPublish ? "publish" : "draft",
       reasons: Array.isArray(parsed.decision_log?.reasons) ? parsed.decision_log.reasons.map(String) : [],
+      summary,
       cmad: normalizeCmad(parsed.decision_log?.cmad),
       desk: normalizeDesk(parsed.decision_log?.desk, parsed.category),
       source_terms: input.sourceTerms,

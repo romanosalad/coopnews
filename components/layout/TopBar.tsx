@@ -1,12 +1,9 @@
 const navItems = [
-  { label: "Manchetes", active: true },
-  { label: "Criatividade" },
-  { label: "Martech" },
-  { label: "IA" },
-  { label: "Comunicação do Bem" },
-  { label: "Lá Fora" },
-  { label: "Fórum" },
-  { label: "Colunistas" }
+  { label: "Manchetes", href: "/", active: true },
+  { label: "CoopTech", href: "#cooptech" },
+  { label: "Lá Fora", href: "#la-fora" },
+  { label: "Fórum", href: "#mais-populares" },
+  { label: "Colunistas", href: "#colunistas" }
 ];
 
 export function TopBar() {
@@ -15,7 +12,7 @@ export function TopBar() {
       <div className="topbar-inner">
         <nav className="topnav" aria-label="Editorias">
           {navItems.map((item) => (
-            <a key={item.label} href="#" className={item.active ? "is-active" : ""}>
+            <a key={item.label} href={item.href} className={item.active ? "is-active" : ""}>
               {item.label}
             </a>
           ))}

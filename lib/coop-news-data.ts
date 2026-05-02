@@ -1,4 +1,5 @@
 export type CoopArticle = {
+  id?: string;
   slug: string;
   eyebrow: string;
   eyebrowClass: string;
@@ -12,6 +13,11 @@ export type CoopArticle = {
   bodyMarkdown?: string | null;
   relevanceScore?: number | null;
   decisionLog?: Record<string, unknown> | null;
+  viewCount?: number;
+  clickCount?: number;
+  totalEngagedSeconds?: number;
+  qualityViewCount?: number;
+  avgScrollDepth?: number;
   isAiGenerated?: boolean;
   section: "hero" | "agora" | "popular" | "editorias" | "lafora";
   body: string[];
