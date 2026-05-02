@@ -1,0 +1,297 @@
+{
+  "name": "🚀 Briefing.Co — CREW RADAR",
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "⏰ Schedule — Seg/Qui 07h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [1, 4],
+              "triggerAtHour": 7,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "scout-serper",
+      "name": "🔍 Scout — Serper.dev",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "onError": "continueRegularOutput",
+      "position": [480, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/news",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-API-KEY", "value": "={{ $env.SERPER_API_KEY }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "q": "cooperativa marketing IA automação OR cooperativismo tecnologia comunicação OR Sicredi Sicoob Unimed marketing OR open finance cooperativa OR fintech cooperativa",
+          "gl": "br",
+          "hl": "pt-br",
+          "num": 10,
+          "tbs": "qdr:d3"
+        }
+      }
+    },
+    {
+      "id": "score-filter",
+      "name": "📊 Filtro Source Score ≥ 0.75",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "onError": "continueRegularOutput",
+      "position": [720, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const TRUSTED_SOURCES = [\n  'sicredi.com.br','sicoob.com.br','bancoob.com.br','unicred.com.br',\n  'unimed.com.br','coamo.com.br','cocamar.com.br','ocb.org.br',\n  'inova.coop.br','mundocoop.com.br','celcoin.com.br','woccu.org',\n  'meioemensagem.com.br','b9.com.br','exame.com','nexojornal.com.br'\n];\nconst COOP_KEYWORDS = [\n  'cooperativa','cooperativismo','cooperado','sicredi','sicoob',\n  'unimed','ocb','sobras','governança cooperativa','marketing cooperativo',\n  'ia cooperativa','fintech cooperativa','open finance cooperativa'\n];\nconst BLOCKED = ['assessoria','press release','nota oficial','comunicado de imprensa'];\n\nconst news = $input.all()[0].json.news || [];\nconst scored = [];\n\nfor (const item of news) {\n  let score = 0.5;\n  const url = (item.link || '').toLowerCase();\n  const combined = ((item.title || '') + ' ' + (item.snippet || '')).toLowerCase();\n\n  if (TRUSTED_SOURCES.some(s => url.includes(s))) score += 0.2;\n  const kwMatches = COOP_KEYWORDS.filter(kw => combined.includes(kw)).length;\n  score += Math.min(kwMatches * 0.05, 0.15);\n  if (BLOCKED.some(p => combined.includes(p))) score -= 0.3;\n  const hoursOld = (Date.now() - new Date(item.date || Date.now()).getTime()) / 3600000;\n  if (hoursOld <= 24) score += 0.1;\n\n  let vertical = 'geral';\n  if (combined.match(/sicredi|sicoob|unicred|crédito|fintech|open finance/)) vertical = 'credito';\n  else if (combined.match(/agro|coamo|cocamar|produtor rural/)) vertical = 'agro';\n  else if (combined.match(/unimed|saúde|médico cooperado/)) vertical = 'saude';\n  else if (combined.match(/consumo|habitação|varejo cooperativa/)) vertical = 'consumo';\n\n  score = Math.min(Math.max(parseFloat(score.toFixed(2)), 0), 1);\n  if (score >= 0.75) {\n    scored.push({ json: { title: item.title, link: item.link, snippet: item.snippet, source: item.source, date: item.date, source_score: score, vertical } });\n  }\n}\nscored.sort((a, b) => b.json.source_score - a.json.source_score);\nreturn scored.slice(0, 3);"
+      }
+    },
+    {
+      "id": "check-has-news",
+      "name": "❓ Tem notícias aprovadas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "onError": "continueErrorOutput",
+      "position": [960, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "has-items",
+              "leftValue": "={{ $input.all().length }}",
+              "operator": { "operation": "gt", "type": "number" },
+              "rightValue": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "sintetizador-openai",
+      "name": "✍️ Sintetizador — Axios Smart Brevity",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "onError": "continueRegularOutput",
+      "position": [1200, 220],
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "modelId": { "__rl": true, "value": "gpt-4o", "mode": "list", "cachedResultName": "gpt-4o" },
+        "options": { "maxTokens": 1200, "temperature": 0.3 },
+        "prompt": {
+          "messages": {
+            "values": [
+              {
+                "role": "system",
+                "content": "Você é o SINTETIZADOR do Briefing.Co — o único portal de inteligência em marketing cooperativo do Brasil.\n\nSeu trabalho: transformar uma notícia bruta em um RADAR seguindo ESTRITAMENTE o estilo Axios Smart Brevity adaptado para o cooperativismo brasileiro.\n\nREGRAS ABSOLUTAS (fa.md V3.1):\n1. Proibido introduções. O artigo começa no FATO.\n2. Parágrafos máximos de 2 linhas.\n3. Use negrito para lead-ins como âncoras de leitura.\n4. Headline < 60 caracteres. Factual, sem adjetivos.\n5. PROIBIDO: disruptivo, sinergia, alavancar, pensar fora da caixa, ecossistema, inovar.\n6. Responda: O QUE ACONTECEU + POR QUE IMPORTA PARA O GESTOR COOPERATIVISTA.\n7. Tom: analítico, direto, nunca institucional.\n8. Mínimo 2.000 caracteres.\n9. NUNCA invente dados. Se não tiver fonte, sinalize INSUFFICIENT_CONTEXT.\n\nESTRUTURA OBRIGATÓRIA:\n## [Headline < 60 chars]\n**O que aconteceu:** [1 frase factual]\n\n**Por que importa:** [2 frases de impacto para o gestor cooperativista]\n\n[Contexto em 2-3 parágrafos curtos com análise real]\n\n**A vantagem injusta:** [O que o gestor pode fazer com essa informação]\n\n---\n**TL;DR:**\n- [Ponto 1 em 1 linha]\n- [Ponto 2 em 1 linha]\n- [Ponto 3 em 1 linha]"
+              },
+              {
+                "role": "user",
+                "content": "=Transforme a notícia abaixo em um RADAR para gestores de cooperativas da vertical **{{ $json.vertical }}**:\n\nTítulo: {{ $json.title }}\nFonte: {{ $json.source }}\nData: {{ $json.date }}\nResumo: {{ $json.snippet }}\nLink original: {{ $json.link }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "gatekeeper",
+      "name": "🛡️ Gatekeeper — 5 Checks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "onError": "continueRegularOutput",
+      "position": [1440, 220],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// === GATEKEEPER — Briefing.Co (fa.md V3.1) ===\nconst item = $input.item;\nconst content = item.json.message?.content || '';\nconst scoutData = item.json;\n\nconst BANNED = ['disruptivo','disruptiva','sinergia','alavancar','alavancagem',\n  'pensar fora da caixa','ecossistema','inovar','inovação disruptiva',\n  'agregar valor','estado da arte'];\n\nconst checks = {};\n\n// 1 — Densidade (Radar ≥ 2.000 chars)\nchecks.density = { passed: content.length >= 2000, detail: `${content.length} chars (mín: 2000)` };\n\n// 2 — Glossário Banido\nconst found = BANNED.filter(w => content.toLowerCase().includes(w));\nchecks.banned_words = { passed: found.length === 0, detail: found.length ? `Banidas: ${found.join(', ')}` : 'OK' };\n\n// 3 — Substância mínima\nconst hasSubstance = content.toLowerCase().includes('cooperativa') &&\n  (content.toLowerCase().includes('gestor') || content.toLowerCase().includes('impacto'));\nchecks.cmad = { passed: hasSubstance && content.length >= 2000, detail: hasSubstance ? 'Substância presente' : 'Falta análise de impacto' };\n\n// 4 — Vantagem Injusta\nconst hasVI = content.toLowerCase().includes('vantagem injusta') ||\n  content.toLowerCase().includes('o gestor pode') || content.toLowerCase().includes('o que fazer');\nchecks.unfair_advantage = { passed: hasVI, detail: hasVI ? 'Presente' : 'FALTA seção Vantagem Injusta' };\n\n// 5 — Anti-Jabá (Teste do Orfanato)\nconst brands = (content.match(/sicredi|sicoob|unimed|banrisul|itaú|bradesco/gi) || []).length;\nconst paragraphs = Math.max(1, (content.match(/\\n\\n/g) || []).length);\nconst ratio = brands / paragraphs;\nchecks.anti_jaba = { passed: ratio < 0.8, detail: ratio < 0.8 ? 'Independente de marca' : `JABÁ: ${brands} marcas em ${paragraphs} parágrafos` };\n\nconst allPassed = Object.values(checks).every(c => c.passed);\nconst failedList = Object.entries(checks).filter(([,v]) => !v.passed).map(([k,v]) => `${k}: ${v.detail}`);\n\nreturn { json: {\n  content,\n  gatekeeper_passed: allPassed,\n  output_score: allPassed ? 0.92 : 0.40,\n  checks,\n  failed_checks: failedList,\n  vertical: scoutData.vertical || 'geral',\n  source_url: scoutData.link || '',\n  source_name: scoutData.source || '',\n  source_score: scoutData.source_score || 0\n}};"
+      }
+    },
+    {
+      "id": "gate-decision",
+      "name": "🚦 Aprovado pelo Gate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "onError": "continueErrorOutput",
+      "position": [1680, 220],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "gate-check",
+              "leftValue": "={{ $json.gatekeeper_passed }}",
+              "operator": { "operation": "true", "type": "boolean", "singleValue": true }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "extract-article-data",
+      "name": "📦 Montar Payload do Artigo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "onError": "continueRegularOutput",
+      "position": [1920, 160],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const content = $json.content || '';\nconst headlineMatch = content.match(/##\\s*(.+)/);\nconst headline = headlineMatch ? headlineMatch[1].trim().replace(/[*_]/g,'') : 'Radar Cooperativo';\nconst leadMatch = content.match(/\\*\\*O que aconteceu:\\*\\*\\s*(.+)/);\nconst lead = leadMatch ? leadMatch[1].trim() : '';\nconst tldrMatch = content.match(/\\*\\*TL;DR:\\*\\*([\\s\\S]+)$/);\nconst tldr = tldrMatch ? tldrMatch[1].trim() : '';\nconst slug = headline.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9\\s-]/g,'').replace(/\\s+/g,'-').slice(0,80);\nconst wordCount = content.split(/\\s+/).length;\nconst readingTime = Math.max(1, Math.ceil(wordCount / 300));\nreturn { json: {\n  slug: `${slug}-${Date.now()}`,\n  title: headline, lead, content, tldr,\n  caderno: 'radar', access_level: 'free',\n  vertical: $json.vertical || 'geral',\n  source_url: $json.source_url || '',\n  source_name: $json.source_name || '',\n  source_score: $json.source_score || 0,\n  output_score: $json.output_score || 0,\n  reading_time_min: readingTime,\n  status: 'published',\n  published_at: new Date().toISOString(),\n  created_by: 'crew-radar-n8n'\n}};"
+      }
+    },
+    {
+      "id": "publish-supabase",
+      "name": "✅ Publicar no Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "onError": "continueRegularOutput",
+      "position": [2160, 160],
+      "credentials": {
+        "supabaseApi": { "id": "supabase-briefingco", "name": "Supabase — Briefing.Co" }
+      },
+      "parameters": {
+        "resource": "row",
+        "operation": "create",
+        "tableId": "contents",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "slug",             "fieldValue": "={{ $json.slug }}" },
+            { "fieldId": "title",            "fieldValue": "={{ $json.title }}" },
+            { "fieldId": "lead",             "fieldValue": "={{ $json.lead }}" },
+            { "fieldId": "content",          "fieldValue": "={{ $json.content }}" },
+            { "fieldId": "tldr",             "fieldValue": "={{ $json.tldr }}" },
+            { "fieldId": "caderno",          "fieldValue": "radar" },
+            { "fieldId": "access_level",     "fieldValue": "free" },
+            { "fieldId": "vertical",         "fieldValue": "={{ $json.vertical }}" },
+            { "fieldId": "source_url",       "fieldValue": "={{ $json.source_url }}" },
+            { "fieldId": "source_name",      "fieldValue": "={{ $json.source_name }}" },
+            { "fieldId": "source_score",     "fieldValue": "={{ $json.source_score }}" },
+            { "fieldId": "output_score",     "fieldValue": "={{ $json.output_score }}" },
+            { "fieldId": "reading_time_min", "fieldValue": "={{ $json.reading_time_min }}" },
+            { "fieldId": "status",           "fieldValue": "published" },
+            { "fieldId": "published_at",     "fieldValue": "={{ $json.published_at }}" },
+            { "fieldId": "created_by",       "fieldValue": "crew-radar-n8n" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "slack-success",
+      "name": "📣 Slack — Publicado!",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
+      "position": [2400, 160],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": { "__rl": true, "value": "#briefingco-editorial", "mode": "name", "cachedResultName": "#briefingco-editorial" },
+        "text": "=✅ *RADAR PUBLICADO*\n\n*Título:* {{ $json.title }}\n*Vertical:* {{ $json.vertical }}\n*Score:* {{ $json.source_score }} (fonte) · {{ $json.output_score }} (output)\n*Leitura:* {{ $json.reading_time_min }}min\n*Slug:* `{{ $json.slug }}`"
+      }
+    },
+    {
+      "id": "slack-rejected",
+      "name": "⚠️ Slack — Rejeitado pelo Gate",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
+      "position": [1920, 360],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": { "__rl": true, "value": "#briefingco-editorial", "mode": "name", "cachedResultName": "#briefingco-editorial" },
+        "text": "=⚠️ *RADAR REJEITADO pelo Gatekeeper*\n\n*Falhas:*\n{{ $json.failed_checks.join('\\n') }}\n\n*Score:* {{ $json.output_score }}\n*Status:* Artigo salvo como draft para revisão manual."
+      }
+    },
+    {
+      "id": "save-draft",
+      "name": "💾 Salvar como Draft",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "onError": "continueRegularOutput",
+      "position": [2160, 360],
+      "credentials": {
+        "supabaseApi": { "id": "supabase-briefingco", "name": "Supabase — Briefing.Co" }
+      },
+      "parameters": {
+        "resource": "row",
+        "operation": "create",
+        "tableId": "contents",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "title",           "fieldValue": "=[DRAFT] {{ ($json.content || '').slice(0,60) }}" },
+            { "fieldId": "content",         "fieldValue": "={{ $json.content }}" },
+            { "fieldId": "caderno",         "fieldValue": "radar" },
+            { "fieldId": "vertical",        "fieldValue": "={{ $json.vertical || 'geral' }}" },
+            { "fieldId": "status",          "fieldValue": "draft" },
+            { "fieldId": "gatekeeper_log",  "fieldValue": "={{ JSON.stringify($json.checks || {}) }}" },
+            { "fieldId": "created_by",      "fieldValue": "crew-radar-n8n" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "no-news-slack",
+      "name": "📭 Slack — Sem notícias hoje",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
+      "position": [1200, 440],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": { "__rl": true, "value": "#briefingco-editorial", "mode": "name", "cachedResultName": "#briefingco-editorial" },
+        "text": "📭 *RADAR:* Nenhuma notícia com score ≥ 0.75 encontrada hoje.\nBusca: cooperativa, marketing cooperativo, Sicredi, Sicoob, Unimed.\nAção: revisar queries do Scout."
+      }
+    }
+  ],
+  "connections": {
+    "⏰ Schedule — Seg/Qui 07h":  { "main": [[{ "node": "🔍 Scout — Serper.dev",            "type": "main", "index": 0 }]] },
+    "🔍 Scout — Serper.dev":      { "main": [[{ "node": "📊 Filtro Source Score ≥ 0.75",     "type": "main", "index": 0 }]] },
+    "📊 Filtro Source Score ≥ 0.75": { "main": [[{ "node": "❓ Tem notícias aprovadas?",      "type": "main", "index": 0 }]] },
+    "❓ Tem notícias aprovadas?":  {
+      "main": [
+        [{ "node": "✍️ Sintetizador — Axios Smart Brevity", "type": "main", "index": 0 }],
+        [{ "node": "📭 Slack — Sem notícias hoje",           "type": "main", "index": 0 }]
+      ]
+    },
+    "✍️ Sintetizador — Axios Smart Brevity": { "main": [[{ "node": "🛡️ Gatekeeper — 5 Checks", "type": "main", "index": 0 }]] },
+    "🛡️ Gatekeeper — 5 Checks":  { "main": [[{ "node": "🚦 Aprovado pelo Gate?",             "type": "main", "index": 0 }]] },
+    "🚦 Aprovado pelo Gate?":      {
+      "main": [
+        [{ "node": "📦 Montar Payload do Artigo",    "type": "main", "index": 0 }],
+        [{ "node": "⚠️ Slack — Rejeitado pelo Gate", "type": "main", "index": 0 }]
+      ]
+    },
+    "📦 Montar Payload do Artigo":       { "main": [[{ "node": "✅ Publicar no Supabase",         "type": "main", "index": 0 }]] },
+    "✅ Publicar no Supabase":           { "main": [[{ "node": "📣 Slack — Publicado!",            "type": "main", "index": 0 }]] },
+    "⚠️ Slack — Rejeitado pelo Gate":   { "main": [[{ "node": "💾 Salvar como Draft",             "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "errorWorkflow": ""
+  },
+  "tags": ["briefingco", "crew-radar", "editorial-ai"]
+}
