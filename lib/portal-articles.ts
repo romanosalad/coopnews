@@ -34,8 +34,8 @@ export async function getPortalHomeArticles(): Promise<PortalHomeArticles> {
   const popularLive = dedupeContentsBySource(await getPopularContentsFromSupabase())
     .map(contentToArticle)
     .filter((article) => !isWeakRoundupArticle(article));
-  const coopTech = filterByDesk(live, ["CoopTech", "CoopTech", "Martech", "IA", "Automacao"]);
-  const laFora = filterByDesk(live, ["La Fora", "Lá Fora", "Comunicacao do Bem", "Comunicação do Bem"]);
+  const coopTech = filterByDesk(live, ["CoopTech", "Martech", "IA", "Automacao", "Tech"]);
+  const laFora = filterByLaFora(live);
 
   if (live.length === 0) {
     return {
@@ -56,7 +56,7 @@ export async function getPortalHomeArticles(): Promise<PortalHomeArticles> {
     editorias: fillArticles(live.slice(0, 6), getArticlesBySection("editorias"), 6),
     coopTech: fillFromLive(coopTech, live, 6),
     popular: fillArticles(popularLive.length > 0 ? popularLive : live, getArticlesBySection("popular"), 7),
-    laFora: fillFromLive(laFora, live, 3)
+    laFora: fillArticles(laFora, getArticlesBySection("lafora"), 3)
   };
 }
 
@@ -116,6 +116,31 @@ function filterByDesk(articles: CoopArticle[], names: string[]) {
   });
 }
 
+function filterByLaFora(articles: CoopArticle[]) {
+  const deskMatch = filterByDesk(articles, ["La Fora", "Lá Fora", "Comunicacao do Bem", "Comunicação do Bem", "B Corp", "ESG"]);
+  if (deskMatch.length > 0) return deskMatch;
+
+  return articles.filter((article) => {
+    const text = normalizeText(`${stripHtml(article.titleHtml)} ${article.sourceUrl ?? ""} ${article.eyebrow}`);
+    return [
+      "b corp",
+      "b-corp",
+      "esg",
+      "purpose",
+      "social impact",
+      "sustainab",
+      "diversity",
+      "duolingo",
+      "patagonia",
+      "ben & jerry",
+      "rabobank",
+      "desjardins",
+      "nationwide",
+      "rei co-op"
+    ].some((keyword) => text.includes(keyword));
+  });
+}
+
 function prioritizeArticlesWithImages(articles: CoopArticle[]) {
   return [...articles].sort((left, right) => {
     const delta = articleHomeScore(right) - articleHomeScore(left);
@@ -169,14 +194,15 @@ function contentToArticle(content: Content): CoopArticle {
   const body = markdownToParagraphs(content.body_markdown);
   const summary = getDecisionLogString(content.decision_log, "summary");
   const avgScrollDepth = content.view_count ? Math.round((content.total_scroll_depth ?? 0) / content.view_count) : 0;
+  const dek = buildDek({ summary, body, title: content.title });
 
   return {
     id: content.id,
     slug: content.slug,
-    eyebrow: `${category.toUpperCase()} · IA`,
+    eyebrow: category.toUpperCase(),
     eyebrowClass: categoryToEyebrowClass(category),
     titleHtml: escapeHtml(content.title),
-    dek: toLead(summary || fallbackSummary(content.title, body[0])),
+    dek,
     author: "Redação CoopNews",
     readTime: estimateReadTime(content.body_markdown),
     placeholder: placeholderFromSlug(content.slug),
@@ -190,9 +216,21 @@ function contentToArticle(content: Content): CoopArticle {
     totalEngagedSeconds: content.total_engaged_seconds ?? 0,
     qualityViewCount: content.quality_view_count ?? 0,
     avgScrollDepth,
+    completedReadCount: content.completed_read_count ?? 0,
+    shareCount: content.share_count ?? 0,
+    completionRate: content.view_count
+      ? Math.min(100, Math.round(((content.completed_read_count ?? 0) / content.view_count) * 100))
+      : 0,
     isAiGenerated: true,
+    storyJson: Array.isArray(content.story_json)
+      ? content.story_json.map((slide) => ({
+          kicker: String(slide?.kicker ?? ""),
+          title: String(slide?.title ?? ""),
+          body: String(slide?.body ?? "")
+        }))
+      : [],
     section: "editorias",
-    body: body.length > 0 ? body : ["Matéria refinada pela curadoria de IA do Coop News."]
+    body: body.length > 0 ? body : ["Matéria reescrita pela redação do CoopNews."]
   };
 }
 
@@ -201,13 +239,34 @@ function getDecisionLogString(log: Record<string, unknown>, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function fallbackSummary(title: string, firstParagraph?: string) {
-  const brand = title.split(":")[0].replace(/\s+\|\s+.*/, "").trim();
-  if (brand && brand.length < 52) {
-    return `O caso mostra como ${brand} usa comunicação, marca e experiência para transformar vínculo comunitário em vantagem competitiva.`;
+function buildDek({ summary, body, title }: { summary: string; body: string[]; title: string }) {
+  const cleanSummary = summary.trim();
+  const firstParagraph = (body[0] ?? "").trim();
+  const summaryDuplicatesBody =
+    cleanSummary.length > 40 &&
+    firstParagraph.length > 40 &&
+    normalizeText(cleanSummary).slice(0, 80) === normalizeText(firstParagraph).slice(0, 80);
+
+  if (cleanSummary && !summaryDuplicatesBody) {
+    return toLead(cleanSummary);
   }
 
-  return firstParagraph ?? "Análise estratégica da curadoria CoopNews para o mercado cooperativista.";
+  return toLead(synthesizeDek(title, body));
+}
+
+function synthesizeDek(title: string, body: string[]) {
+  const brand = title.split(":")[0].replace(/\s+\|\s+.*/, "").trim();
+  const secondParagraph = (body[1] ?? "").trim();
+
+  if (secondParagraph) {
+    return secondParagraph;
+  }
+
+  if (brand && brand.length < 52) {
+    return `Como ${brand} transforma marca, vínculo e experiência em vantagem competitiva para a economia cooperativa.`;
+  }
+
+  return "Análise estratégica do CoopNews para o marketing cooperativista global.";
 }
 
 function markdownToParagraphs(markdown: string) {

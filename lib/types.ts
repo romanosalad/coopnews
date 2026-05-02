@@ -25,4 +25,10 @@ export type Content = {
   total_engaged_seconds?: number;
   quality_view_count?: number;
   total_scroll_depth?: number;
+  completed_read_count?: number;
+  share_count?: number;
+  scroll_25_count?: number;
+  scroll_50_count?: number;
+  scroll_75_count?: number;
+  scroll_100_count?: number;
 };

@@ -18,7 +18,11 @@ export type CoopArticle = {
   totalEngagedSeconds?: number;
   qualityViewCount?: number;
   avgScrollDepth?: number;
+  completedReadCount?: number;
+  shareCount?: number;
+  completionRate?: number;
   isAiGenerated?: boolean;
+  storyJson?: { kicker: string; title: string; body: string }[];
   section: "hero" | "agora" | "popular" | "editorias" | "lafora";
   body: string[];
 };

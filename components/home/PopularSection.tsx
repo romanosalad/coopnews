@@ -47,11 +47,14 @@ function formatPopularMeta(article: CoopArticle) {
   const views = article.viewCount ?? 0;
   const clicks = article.clickCount ?? 0;
   const engagedMinutes = Math.round((article.totalEngagedSeconds ?? 0) / 60);
-  const quality = article.qualityViewCount ?? 0;
+  const completion = article.completionRate ?? 0;
 
   if (views === 0 && clicks === 0 && engagedMinutes === 0) {
     return "NOVO · AGUARDANDO SINAIS";
   }
 
-  return `${views} VIEWS · ${clicks} CLIQUES · ${engagedMinutes} MIN · ${quality} QUALITY`;
+  const parts = [`${views} VIEWS`, `${clicks} CLIQUES`];
+  if (engagedMinutes > 0) parts.push(`${engagedMinutes} MIN LIDOS`);
+  if (completion > 0) parts.push(`${completion}% LERAM ATÉ O FIM`);
+  return parts.join(" · ");
 }
