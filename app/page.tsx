@@ -22,10 +22,11 @@ export default async function HomePage() {
         <CoopWordmark height={26} dark />
       </div>
       <TopBar />
-      <Hero feature={articles.heroFeature} leftArticles={articles.heroLeft} rightArticles={articles.heroRight} />
       <ColunistasSection />
-      <PopularSection articles={articles.popular} />
+      <hr className="section-rule" aria-hidden="true" />
+      <Hero feature={articles.heroFeature} leftArticles={articles.heroLeft} rightArticles={articles.heroRight} />
       <EditoriasSection articles={articles.coopTech} />
+      <PopularSection articles={articles.popular} />
       <LaForaSection articles={articles.laFora} />
       <CtaBand />
       <Footer />
