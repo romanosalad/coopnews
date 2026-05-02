@@ -31,6 +31,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     }
   }
 
+  // When unauthenticated (only /admin/login can render here), let the page
+  // own its layout so it can use the public TopBar instead of the dark admin
+  // header. Avoids stacking two headers on the login screen.
+  if (!user) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="admin-shell">
       <header className="admin-topbar">
@@ -38,18 +45,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <CoopWordmark height={20} dark />
           <span className="admin-brand-tag">REDAÇÃO</span>
         </Link>
-        {user ? (
-          <nav className="admin-nav">
-            <Link href="/admin">Dashboard</Link>
-            <Link href="/admin/articles/new" className="admin-nav-cta">+ Nova matéria</Link>
-            <span className="admin-nav-user">
-              {editorRow?.display_name ?? user.email} · <em>{editorRow?.role}</em>
-            </span>
-            <form action="/auth/signout" method="post">
-              <button type="submit" className="admin-nav-signout">Sair</button>
-            </form>
-          </nav>
-        ) : null}
+        <nav className="admin-nav">
+          <Link href="/admin">Dashboard</Link>
+          <Link href="/admin/articles/new" className="admin-nav-cta">+ Nova matéria</Link>
+          <span className="admin-nav-user">
+            {editorRow?.display_name ?? user.email} · <em>{editorRow?.role}</em>
+          </span>
+          <form action="/auth/signout" method="post">
+            <button type="submit" className="admin-nav-signout">Sair</button>
+          </form>
+        </nav>
       </header>
       <div className="admin-main">{children}</div>
     </div>

@@ -24,7 +24,7 @@ export function TopBar() {
               <path d="m20 20-3.5-3.5" />
             </svg>
           </button>
-          <button className="btn-enter">ENTRAR</button>
+          <a href="/admin/login" className="btn-enter">LOGIN</a>
           <button className="btn-subscribe">ASSINAR</button>
         </div>
       </div>

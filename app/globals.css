@@ -79,21 +79,35 @@ a { color: inherit; text-decoration: none; }
 .admin-nav-signout:hover { border-color: var(--accent); color: var(--accent); }
 .admin-main { max-width: 1100px; margin: 0 auto; padding: 48px 32px; }
 
-.admin-login { min-height: 100vh; display: grid; place-items: center; background: var(--paper); padding: 32px; }
-.admin-login-card { width: 100%; max-width: 420px; padding: 36px 32px; background: #fff; border-top: 4px solid var(--brand); border: 1px solid rgba(0,0,0,0.08); }
-.admin-login-card h1 { font-family: var(--font-display); font-weight: 700; font-size: 36px; margin: 8px 0 14px; }
-.admin-login-card > p { font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--mute); margin: 0 0 24px; }
-.admin-login-form { display: flex; flex-direction: column; gap: 12px; }
-.admin-login-form label { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink); text-transform: uppercase; }
-.admin-login-form input { padding: 14px 14px; border: 1px solid var(--ink); background: var(--paper); font-family: var(--font-body); font-size: 15px; color: var(--ink); outline: none; }
-.admin-login-form input:focus { border-color: var(--accent); }
-.admin-login-form button { padding: 14px; background: var(--ink); color: var(--brand); border: 0; font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.18em; cursor: pointer; }
-.admin-login-form button:disabled { opacity: 0.5; cursor: not-allowed; }
-.admin-login-form button:hover:not(:disabled) { background: var(--accent); color: var(--paper); }
-.admin-login-success { padding: 18px; background: rgba(199,245,66,0.18); border-left: 4px solid var(--brand); }
-.admin-login-success strong { display: block; font-family: var(--font-display); font-weight: 600; font-size: 18px; margin-bottom: 6px; }
-.admin-login-success p { margin: 0; font-size: 14px; color: var(--mute); }
-.admin-login-error { color: var(--accent); font-family: var(--font-body); font-size: 13px; }
+/* /admin/login — uses the public TopBar so it feels like part of the site */
+.login-page { position: relative; background: var(--paper); min-height: 100vh; }
+.login-section { max-width: 1280px; margin: 0 auto; padding: 88px 32px 96px 220px; display: grid; place-items: center; }
+.login-card { width: 100%; max-width: 480px; padding: 44px 40px; background: #fff; border-top: 4px solid var(--brand); border: 1px solid rgba(0,0,0,0.08); }
+.login-card h1 { font-family: var(--font-display); font-weight: 700; font-size: 56px; line-height: 1; margin: 10px 0 16px; letter-spacing: -0.01em; }
+.login-tag { font-family: var(--font-display); font-style: italic; font-size: 17px; line-height: 1.45; color: var(--mute); margin: 0 0 28px; }
+.login-form { display: flex; flex-direction: column; gap: 12px; }
+.login-form label { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink); text-transform: uppercase; }
+.login-form input { padding: 14px; border: 1px solid var(--ink); background: var(--paper); font-family: var(--font-body); font-size: 15px; color: var(--ink); outline: none; }
+.login-form input:focus { border-color: var(--accent); }
+.login-form button { padding: 14px; background: var(--ink); color: var(--brand); border: 0; font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.18em; cursor: pointer; }
+.login-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+.login-form button:hover:not(:disabled) { background: var(--accent); color: var(--paper); }
+.login-success { padding: 20px; background: rgba(199,245,66,0.2); border-left: 4px solid var(--brand); }
+.login-success strong { display: block; font-family: var(--font-display); font-weight: 600; font-size: 18px; margin-bottom: 6px; color: var(--ink); }
+.login-success p { margin: 0; font-size: 14px; color: var(--mute); }
+.login-error { color: var(--accent); font-family: var(--font-body); font-size: 13px; }
+.login-help { margin: 24px 0 0; font-family: var(--font-body); font-size: 13px; color: var(--mute); line-height: 1.5; }
+.login-help a { color: var(--ink); border-bottom: 1px solid var(--brand); font-weight: 700; }
+.login-help a:hover { color: var(--accent); }
+
+@media (max-width: 1180px) {
+  .login-section { padding: 88px 32px 96px; }
+}
+@media (max-width: 720px) {
+  .login-section { padding: 64px 24px 64px; }
+  .login-card { padding: 32px 24px; }
+  .login-card h1 { font-size: 42px; }
+}
 
 .admin-dashboard { display: flex; flex-direction: column; gap: 36px; }
 .admin-dashboard-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
