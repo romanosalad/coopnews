@@ -62,6 +62,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </Link>
         <nav className="admin-nav">
           <Link href="/admin">Dashboard</Link>
+          {(editorRow?.role === "chief_editor" || editorRow?.role === "admin") ? (
+            <Link href="/admin/newsletter">Newsletter</Link>
+          ) : null}
           <Link href="/admin/articles/new" className="admin-nav-cta">+ Nova matéria</Link>
           <span className="admin-nav-user">
             {editorRow?.display_name ?? user.email} · <em>{editorRow?.role}</em>
