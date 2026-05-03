@@ -2,46 +2,36 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { registerDecisor, type DecisorVertical } from "@/lib/decisor-actions";
-
-const VERTICALS: { value: DecisorVertical; label: string }[] = [
-  { value: "credito", label: "Crédito" },
-  { value: "agro", label: "Agro" },
-  { value: "saude", label: "Saúde" },
-  { value: "consumo", label: "Consumo" },
-  { value: "outro", label: "Outro" }
-];
+import { registerDecisor } from "@/lib/decisor-actions";
 
 type DecidorGateProps = {
   sourceSlug?: string;
   sourceCaderno?: "PROTOCOLO";
 };
 
+// Camada 2 — fricção zero. Só email libera o Protocolo. O lead é gravado,
+// o cookie httpOnly é setado, e um welcome email dispara via Resend
+// confirmando inscrição na newsletter + link pra completar perfil depois.
+//
+// O usuário NÃO precisa preencher cargo, vertical ou nome aqui. Esses
+// campos viram opcionais e podem ser preenchidos depois pra personalizar
+// o digest. Decisão do founder: maior taxa de conversão > dado granular
+// no primeiro toque.
 export function DecidorGate({ sourceSlug, sourceCaderno = "PROTOCOLO" }: DecidorGateProps) {
   const router = useRouter();
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [cargo, setCargo] = useState("");
-  const [vertical, setVertical] = useState<DecisorVertical | "">("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!vertical) {
-      setError("Selecione uma vertical.");
-      return;
-    }
     setError("");
 
     const utmParams = readUtmFromUrl();
 
     startTransition(async () => {
       const result = await registerDecisor({
-        name,
         email,
-        cargo,
-        vertical,
         source_slug: sourceSlug,
         source_caderno: sourceCaderno,
         ...utmParams
@@ -60,29 +50,17 @@ export function DecidorGate({ sourceSlug, sourceCaderno = "PROTOCOLO" }: Decidor
       <div className="decidor-gate-card">
         <span className="decidor-gate-eyebrow">Acesso · Camada Decisor</span>
         <h2 id="decidor-gate-title" className="decidor-gate-title">
-          Desbloqueie o <em>Protocolo</em> completo
+          Continue lendo o <em>Protocolo</em>
         </h2>
         <p className="decidor-gate-tag">
-          Inteligência acionável para gestores cooperativistas. Sem boletim. Sem spam.
-          Apenas Hacks, Hard News e Análises com Vantagem Injusta.
+          Só seu email. Liberamos o resto na hora e mandamos o briefing semanal toda
+          terça e quinta às 7h. Sem boletim. Sem spam. Cancela em 1 clique.
         </p>
 
         <form onSubmit={handleSubmit} className="decidor-gate-form" noValidate>
-          <div className="decidor-gate-row">
-            <label className="decidor-gate-field">
-              <span>Nome</span>
-              <input
-                type="text"
-                required
-                minLength={2}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                autoComplete="name"
-                placeholder="Seu nome"
-              />
-            </label>
-            <label className="decidor-gate-field">
-              <span>E-mail corporativo</span>
+          <div className="decidor-gate-singlefield">
+            <label className="decidor-gate-field decidor-gate-field-grow">
+              <span>E-mail</span>
               <input
                 type="email"
                 required
@@ -92,46 +70,17 @@ export function DecidorGate({ sourceSlug, sourceCaderno = "PROTOCOLO" }: Decidor
                 placeholder="voce@cooperativa.coop.br"
               />
             </label>
-          </div>
-          <div className="decidor-gate-row">
-            <label className="decidor-gate-field">
-              <span>Cargo</span>
-              <input
-                type="text"
-                required
-                minLength={2}
-                value={cargo}
-                onChange={(event) => setCargo(event.target.value)}
-                autoComplete="organization-title"
-                placeholder="CMO, Head de Marketing, Diretor…"
-              />
-            </label>
-            <label className="decidor-gate-field">
-              <span>Vertical</span>
-              <select
-                required
-                value={vertical}
-                onChange={(event) => setVertical(event.target.value as DecisorVertical)}
-              >
-                <option value="">Selecione…</option>
-                {VERTICALS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <button type="submit" className="decidor-gate-submit" disabled={pending}>
+              {pending ? "Liberando…" : "Liberar leitura →"}
+            </button>
           </div>
 
           {error ? <p className="decidor-gate-error">{error}</p> : null}
 
-          <button type="submit" className="decidor-gate-submit" disabled={pending}>
-            {pending ? "Liberando acesso…" : "Continuar lendo →"}
-          </button>
-
           <p className="decidor-gate-fineprint">
-            Ao continuar, você libera todos os Protocolos no seu navegador. Seus dados ficam
-            no Briefing.Co — não vendemos, não compartilhamos.
+            Você recebe um email de boas-vindas e a próxima edição da newsletter.
+            Quando quiser, complete seu perfil pra personalizar pela vertical (Crédito ·
+            Agro · Saúde · Consumo).
           </p>
         </form>
       </div>

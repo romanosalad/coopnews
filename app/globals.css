@@ -176,6 +176,13 @@ html.focus-mode .dossie-gate-fade { background: linear-gradient(to bottom, rgba(
 .decidor-gate-title em { font-style: italic; font-weight: 700; color: var(--accent); }
 .decidor-gate-tag { margin: 0 0 24px; font-family: var(--font-display); font-style: italic; font-size: 17px; line-height: 1.5; color: var(--mute); max-width: 580px; }
 .decidor-gate-form { display: flex; flex-direction: column; gap: 14px; }
+.decidor-gate-singlefield { display: flex; gap: 10px; align-items: stretch; }
+.decidor-gate-singlefield .decidor-gate-field { flex: 1; }
+.decidor-gate-singlefield .decidor-gate-submit { margin-top: 0; align-self: flex-end; height: 46px; padding: 0 24px; white-space: nowrap; }
+@media (max-width: 540px) {
+  .decidor-gate-singlefield { flex-direction: column; gap: 12px; }
+  .decidor-gate-singlefield .decidor-gate-submit { width: 100%; align-self: stretch; }
+}
 .decidor-gate-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .decidor-gate-field { display: flex; flex-direction: column; gap: 6px; }
 .decidor-gate-field span { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
