@@ -81,6 +81,18 @@ export async function isDecisor(): Promise<boolean> {
   return cookieStore.get(DECISOR_COOKIE)?.value === "1";
 }
 
+// Camada 3 — assinante Elite. Stripe Checkout entra na Fase 2 e setará
+// o cookie httpOnly briefing_assinante_elite=1. Por enquanto retorna
+// false sempre (todo mundo vê o paywall do Dossiê). Quando Stripe estiver
+// no ar, troca a lógica pra ler o cookie + cruzar com tabela subscriptions
+// no Supabase.
+const ELITE_COOKIE = "briefing_assinante_elite";
+
+export async function isAssinanteElite(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return cookieStore.get(ELITE_COOKIE)?.value === "1";
+}
+
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 200;
 }
