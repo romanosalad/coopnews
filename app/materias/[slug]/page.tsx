@@ -9,10 +9,11 @@ import { ArticleTldr } from "@/components/ui/ArticleTldr";
 import { ArticleVisual } from "@/components/ui/ArticleVisual";
 import { CadrinhoBadge, inferCaderno } from "@/components/ui/CadrinhoBadge";
 import { DecidorGate } from "@/components/ui/DecidorGate";
+import { DossieGate } from "@/components/ui/DossieGate";
 import { FocusModeToggle } from "@/components/ui/FocusModeToggle";
 import { ShareBar } from "@/components/ui/ShareBar";
 import { coopArticles, type ArticleBodyBlock, type CoopArticle } from "@/lib/coop-news-data";
-import { isDecisor } from "@/lib/decisor-actions";
+import { isAssinanteElite, isDecisor } from "@/lib/decisor-actions";
 import { getPortalArticleBySlug } from "@/lib/portal-articles";
 
 type Props = {
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Props) {
   if (!article) return {};
 
   return {
-    title: `${stripHtml(article.titleHtml)} | Coop News`,
+    title: `${stripHtml(article.titleHtml)} | Briefing.Co`,
     description: article.dek
   };
 }
@@ -48,11 +49,17 @@ export default async function MateriaPage({ params }: Props) {
   const caderno = inferCaderno(article.bodyMarkdown ?? "", article.eyebrow);
 
   // Camada 2 (Decisor): PROTOCOLOs ficam gateados após o 3º parágrafo até o
-  // visitante se cadastrar. Cookie httpOnly briefing_decisor=1 libera no
-  // device. RADAR fica livre. DOSSIÊ vai pro paywall financeiro na Fase 2.
+  // visitante se cadastrar. Cookie httpOnly briefing_decisor=1 libera no device.
+  // Camada 3 (Elite): DOSSIÊ exige assinatura paga. Cookie httpOnly
+  // briefing_assinante_elite=1 (setado pelo Stripe Checkout, Fase 2).
+  // RADAR fica sempre livre.
   const decisor = await isDecisor();
-  const requiresGate = caderno === "PROTOCOLO" && !decisor;
-  const visibleBlocks = requiresGate ? sliceBeforeGate(bodyBlocks, 3) : bodyBlocks;
+  const elite = await isAssinanteElite();
+  const requiresDecisorGate = caderno === "PROTOCOLO" && !decisor;
+  const requiresDossieGate = caderno === "DOSSIÊ" && !elite;
+  const requiresGate = requiresDecisorGate || requiresDossieGate;
+  const previewParagraphs = requiresDossieGate ? 2 : 3;
+  const visibleBlocks = requiresGate ? sliceBeforeGate(bodyBlocks, previewParagraphs) : bodyBlocks;
   const paragraphCount = visibleBlocks.filter((block) => block.type === "paragraph").length;
 
   return (
@@ -81,7 +88,7 @@ export default async function MateriaPage({ params }: Props) {
             <p className="article-dek">{article.dek}</p>
             <div className="article-meta">
               <span>{article.readTime.toUpperCase()}</span>
-              <span>· COOP NEWS</span>
+              <span>· BRIEFING.CO</span>
             </div>
           </div>
           <div className="article-cover">
@@ -114,7 +121,8 @@ export default async function MateriaPage({ params }: Props) {
               });
             })()}
 
-            {requiresGate ? <DecidorGate sourceSlug={article.slug} sourceCaderno="PROTOCOLO" /> : null}
+            {requiresDecisorGate ? <DecidorGate sourceSlug={article.slug} sourceCaderno="PROTOCOLO" /> : null}
+            {requiresDossieGate ? <DossieGate sourceSlug={article.slug} previewParagraphs={previewParagraphs} /> : null}
 
             {!requiresGate ? (
               <ShareBar title={stripHtml(article.titleHtml)} slug={article.slug} />
@@ -125,8 +133,8 @@ export default async function MateriaPage({ params }: Props) {
                 <span className="section-sub">TRANSPARÊNCIA EDITORIAL</span>
                 <p>
                   {article.isAiGenerated
-                    ? "Esta matéria foi reescrita e diagramada pela redação do CoopNews a partir de uma fonte externa."
-                    : "Conteúdo curado pela redação do CoopNews."}
+                    ? "Esta matéria foi reescrita e diagramada pela redação do Briefing.Co a partir de uma fonte externa."
+                    : "Conteúdo curado pela redação do Briefing.Co."}
                 </p>
                 {article.sourceUrl ? (
                   <a href={article.sourceUrl} target="_blank" rel="noreferrer" className="source-link">
@@ -221,7 +229,7 @@ function ArticleParagraphBlock({ article, paragraph, index, layoutSeed, totalPar
       ) : null}
       {showPullQuote ? (
         <aside className="article-pullquote">
-          <span>Leitura CoopNews</span>
+          <span>Leitura Briefing.Co</span>
           <strong>{pickPullQuote(article)}</strong>
         </aside>
       ) : null}

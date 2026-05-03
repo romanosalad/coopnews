@@ -16,7 +16,7 @@ export default async function HomePage() {
   const articles = await getPortalHomeArticles();
 
   return (
-    <main data-screen-label="01 Home Coop News">
+    <main data-screen-label="01 Home Briefing.Co">
       <BrandCornerMotif />
       <div style={{ position: "absolute", top: 18, left: 32, zIndex: 60 }}>
         <CoopWordmark height={26} dark />

@@ -34,9 +34,25 @@ const inter = Inter({
   variable: "--font-inter"
 });
 
+import { BRAND } from "@/lib/brand";
+
 export const metadata: Metadata = {
-  title: "Coop News - O jornal de marketing cooperativista",
-  description: "Marketing, criatividade e tecnologia para o mundo cooperativista brasileiro."
+  title: `${BRAND.name} — Inteligência editorial em marketing cooperativista`,
+  description: BRAND.short_description,
+  applicationName: BRAND.name,
+  authors: [{ name: BRAND.founder_byline }],
+  openGraph: {
+    title: BRAND.name,
+    description: BRAND.short_description,
+    siteName: BRAND.name,
+    locale: "pt_BR",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: BRAND.name,
+    description: BRAND.short_description
+  }
 };
 
 // Inline antes da hidratação: aplica .focus-mode no <html> se a preferência

@@ -1,15 +1,26 @@
-# newscoop
+# Briefing.Co
 
-Phase 1 scaffold for a cooperative marketing feed with AI ingestion, TabNews-style voting, and Web Story rendering.
+Inteligência editorial em marketing, IA e estratégia para o mercado cooperativista. Motor de ingestão por IA, três cadernos (Radar / Protocolo / Dossiê), modo neurodivergente, captura de leads (Camada 2) e distribuição via newsletter Resend.
 
-## Modules
+## Stack
 
-- `supabase/migrations/20260501000000_newscoop_phase1.sql` creates `contents`, `votes`, ranking, and atomic voting RPC.
-- `supabase/functions/ingest-news/index.ts` discovers stories with Serper, scrapes article content, refines with AI, and inserts publishable stories.
-- `app/page.tsx` renders the ranked community feed.
-- `app/contents/[slug]/page.tsx` renders the full markdown article.
-- `app/stories/[slug]/page.tsx` renders the 5-slide story experience with NewsArticle metadata.
-- `docs/AI_INGESTION.md` explains how to connect the Supabase `CoopNews` project and activate AI ingestion.
+- **Frontend:** Next.js 15 (App Router) + Vanilla CSS + React Server Components
+- **Banco:** Supabase (PostgreSQL + RLS)
+- **Auth:** Supabase Auth (email + password no MVP)
+- **Email:** Resend + React Email
+- **Orquestração editorial:** n8n (servidor dedicado, fora deste repo)
+- **Deploy:** Vercel
+
+## Módulos principais
+
+- `app/page.tsx` — home com Hero + Colunistas + CoopTech + Mais Populares + Lá Fora.
+- `app/materias/[slug]/page.tsx` — template editorial (CadrinhoBadge, TL;DR, Modo Foco, ShareBar, DecidorGate).
+- `app/admin/*` — painel da redação (login, dashboard, composer, newsletter dispatcher).
+- `app/api/newsletter/*` — endpoints de envio + unsubscribe.
+- `app/api/distribution/published` — webhook unificado consumido pelo n8n.
+- `emails/NewsletterDigest.tsx` — template React Email do digest semanal.
+- `lib/brand.ts` — fonte canônica de strings de marca (SSOT).
+- `n8n-workflows/` — exports dos workflows Crew Radar / CoopTech / Lá Fora.
 
 ## Local setup
 
@@ -22,13 +33,26 @@ npm run dev
 ## Supabase setup
 
 ```bash
-supabase db push
-supabase functions deploy ingest-news
-supabase secrets set SERPER_API_KEY=... OPENAI_API_KEY=... OPENAI_MODEL=...
+npx supabase@latest db push --linked --include-all
+npx supabase@latest functions deploy ingest-news
 ```
 
-Invoke ingestion:
+## Variáveis de ambiente (Vercel)
 
-```bash
-supabase functions invoke ingest-news --body '{"limit":3}'
 ```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+RESEND_API_KEY
+NEWSLETTER_API_KEY
+OPENAI_API_KEY (sidebar de IA do composer)
+RESEND_FROM_EMAIL (opcional)
+NEXT_PUBLIC_SITE_URL (opcional)
+```
+
+## Documentação
+
+- `BRIEFINGCO_MASTER_BLUEPRINT.md` — SSOT estratégica.
+- `fa.md` — V3.1, regras editoriais e glossário banido.
+- `crews_architecture.md` — arquitetura das Crews.
+- `john_prd_briefingco.md` — PRD do produto.

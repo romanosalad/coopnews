@@ -74,7 +74,7 @@ export default async function ContentPage({ params }: Props) {
               <div className="rounded-lg border border-ink/10 border-t-4 border-t-coop bg-white p-5 shadow-sm">
                 <p className="text-xs font-black uppercase tracking-normal text-ink/60">Transparencia editorial</p>
                 <p className="mt-3 text-sm leading-6 text-ink/70">
-                  Esta analise foi traduzida e reescrita pela curadoria do CoopNews a partir de uma fonte externa.
+                  Esta analise foi traduzida e reescrita pela redação do Briefing.Co a partir de uma fonte externa.
                 </p>
                 <a href={content.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block rounded-full bg-ink px-4 py-3 text-sm font-black text-coop">
                   Ler materia original

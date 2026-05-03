@@ -22,7 +22,7 @@ export default async function NewArticlePage() {
     <main className="composer-page">
       <header className="composer-page-head">
         <span className="section-sub">Composer · Nova matéria</span>
-        <h1>Escrever para o CoopNews</h1>
+        <h1>Escrever para o Briefing.Co</h1>
       </header>
       <ComposerForm
         initial={{

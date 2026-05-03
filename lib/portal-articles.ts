@@ -306,7 +306,7 @@ function contentToArticle(content: Content): CoopArticle {
     eyebrowClass,
     titleHtml: escapeHtml(content.title),
     dek,
-    author: "Redação CoopNews",
+    author: "Redação Briefing.Co",
     readTime: estimateReadTime(content.body_markdown),
     placeholder: placeholderFromSlug(content.slug),
     imageUrl,
@@ -334,8 +334,8 @@ function contentToArticle(content: Content): CoopArticle {
         }))
       : [],
     section: "editorias",
-    body: body.length > 0 ? body : ["Matéria reescrita pela redação do CoopNews."],
-    bodyBlocks: bodyBlocks.length > 0 ? injectVisualRhythm(bodyBlocks) : [{ type: "paragraph", text: "Matéria reescrita pela redação do CoopNews." }]
+    body: body.length > 0 ? body : ["Matéria reescrita pela redação do Briefing.Co."],
+    bodyBlocks: bodyBlocks.length > 0 ? injectVisualRhythm(bodyBlocks) : [{ type: "paragraph", text: "Matéria reescrita pela redação do Briefing.Co." }]
   };
 }
 
@@ -371,7 +371,7 @@ function synthesizeDek(title: string, body: string[]) {
     return `Como ${brand} transforma marca, vínculo e experiência em vantagem competitiva para a economia cooperativa.`;
   }
 
-  return "Análise estratégica do CoopNews para o marketing cooperativista global.";
+  return "Análise estratégica do Briefing.Co para o marketing cooperativista global.";
 }
 
 function markdownToParagraphs(markdown: string) {
